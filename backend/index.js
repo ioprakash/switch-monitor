@@ -73,6 +73,17 @@ client.on('message', (topic, message) => {
     if (type === 'response') {
         d.lastResponse = payload.substring(0, 5000);
         d.lastCmdTime = new Date().toISOString();
+        // Parse model & firmware from 'show version' output
+        if (payload.includes('BDCOM') && payload.includes('Version')) {
+            const modelMatch = payload.match(/BDCOM\(tm\)\s+(\S+)\s+Software/i);
+            if (modelMatch) d.model = modelMatch[1];
+            const fwMatch = payload.match(/Version\s+(\S+)\s+Build\s+(\d+)/i);
+            if (fwMatch) d.firmware = fwMatch[1] + ' (Build ' + fwMatch[2] + ')';
+            const hwMatch = payload.match(/hardware version:\s*(\S+)/i);
+            if (hwMatch) d.hardware = hwMatch[1];
+            const serialMatch = payload.match(/Serial num:(\S+)/i);
+            if (serialMatch) d.serial = serialMatch[1];
+        }
     }
 });
 
