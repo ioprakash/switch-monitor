@@ -33,7 +33,8 @@ client.on('message', (topic, message) => {
     if (!devices[deviceId]) {
         devices[deviceId] = { 
             id: deviceId, status: 'unknown', lastSeen: null, lastResponse: '',
-            name: deviceId, ip: '', model: '', cpu: null, temperature: null,
+            name: deviceId, ip: '', ipAddresses: [], model: '', hostname: '',
+            cpu: null, temperature: null,
             memory: null, uptime: null, ports: 0, portList: []
         };
     }
@@ -45,13 +46,15 @@ client.on('message', (topic, message) => {
         try {
             const data = JSON.parse(payload);
             if (data.ip) d.ip = data.ip;
+            if (Array.isArray(data.ipAddresses)) d.ipAddresses = data.ipAddresses;
             if (data.model) d.model = data.model;
+            if (data.hostname) d.hostname = data.hostname;
             if (data.name) d.name = data.name;
             if (data.mac) d.mac = data.mac;
             if (data.cpu !== undefined) d.cpu = data.cpu;
             if (data.memory) d.memory = data.memory;
             if (data.temperature !== undefined) d.temperature = data.temperature;
-            if (data.uptime) d.uptime = data.uptime;
+            if (data.uptime !== undefined && data.uptime !== null) d.uptime = data.uptime;
             if (data.ports !== undefined) {
                 d.ports = typeof data.ports === 'object' ? Object.keys(data.ports).length : data.ports;
                 if (data.ports && typeof data.ports === 'object') d.rawPorts = data.ports;

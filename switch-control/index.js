@@ -58,10 +58,18 @@ function snmpGet(host, community, oid) {
     } catch(e) {}
     return null;
 }
+function snmpGetString(host, community, oid) {
+    try {
+        const out = execSync(`snmpget -v2c -c ${community} -Oqv ${host} ${oid}`, { timeout: 5000, encoding: 'utf8' });
+        const val = out.trim().replace(/^"|"$/g, '').trim();
+        if (val && !val.includes('No Such')) return val;
+    } catch(e) {}
+    return null;
+}
 function snmpWalk(host, community, oid) {
     try {
         const out = execSync(`snmpwalk -v2c -c ${community} -Oqv ${host} ${oid}`, { timeout: 8000, encoding: 'utf8' });
-        return out.trim().split('\n').map(l => l.trim()).filter(l => l && !l.includes('No more'));
+        return out.trim().split('\n').map(l => l.trim().replace(/^"|"$/g, '')).filter(l => l && !l.includes('No more'));
     } catch(e) { return []; }
 }
 
@@ -74,39 +82,89 @@ async function pollSwitch(sw) {
     const usedMem = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.5.0');
     const freeMem = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.3.0');
     if (totalMem) {
-        // total is in bytes (134217728 = 128 MB); used looks like percentage (82 = 82%)
         const totalMB = Math.round(totalMem / 1048576);
         const usedPct = usedMem;
         result.memory = { total: totalMB, used: usedPct, usedMB: Math.round(totalMB * usedPct / 100) };
     };
     const temp = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.6.0');
     if (temp !== null) result.temperature = temp;
+    
+    // Uptime (sysUpTime in hundredths of seconds; use -Otv for raw Timeticks value)
+    try {
+        const ut = execSync(`snmpget -v2c -c ${community} -Otv ${ip} .1.3.6.1.2.1.1.3.0`, { timeout: 5000, encoding: 'utf8' });
+        const ticks = parseInt(ut.trim());
+        if (!isNaN(ticks)) result.uptime = Math.floor(ticks / 100);
+    } catch(e) {}
+    
+    // Model / sysDescr: use -On for full OID output, parse carefully
+    try {
+        const out = execSync(`snmpwalk -v2c -c ${community} -On ${ip} .1.3.6.1.2.1.1.1.0`, { timeout: 5000, encoding: 'utf8' });
+        const m = out.match(/STRING:\s*"?(.+?)\s*"?$/im);
+        if (m) {
+            const descr = m[1].trim();
+            // Parse model: expect "BDCOM(tm) S2500-8T2S Software, ..." or "S2500-8T2S"
+            const modelMatch = descr.match(/BDCOM[^(]*\)\s+(\S+)\s+Software/i) || descr.match(/(S\d+[^\s,]*)/);
+            if (modelMatch) result.switchModel = modelMatch[1];
+            // Parse firmware version: "Version X.X.X"
+            const verMatch = descr.match(/Version\s+(\S+)/i);
+            if (verMatch) result.firmware = verMatch[1];
+            result.model = descr.split('\n')[0].trim();
+        }
+    } catch(e) {
+        const sysDescr = snmpGetString(ip, community, '.1.3.6.1.2.1.1.1.0');
+        if (sysDescr) result.model = sysDescr.split('\n')[0].trim();
+    }
+    
+    // sysName (hostname)
+    const sysName = snmpGetString(ip, community, '.1.3.6.1.2.1.1.5.0');
+    if (sysName) result.hostname = sysName;
+    
+    // Management IPs
+    const ipAddrs = snmpWalk(ip, community, '.1.3.6.1.2.1.4.20.1.1');
+    if (ipAddrs.length > 0) result.ipAddresses = ipAddrs;
+    
     const ifNames = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.2');
     const ifStatus = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.8');
     const ifIn = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.10');
     const ifOut = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.16');
+    const ifSpeed = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.5');
+    const ifMac = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.6');
     if (ifNames.length > 0) {
         for (let i = 0; i < ifNames.length; i++) {
+            const rawMac = ifMac[i] ? ifMac[i].replace(/"/g, '').trim() : '';
+            const macParts = rawMac.split(/\s+/).filter(Boolean);
+            const formattedMac = macParts.length >= 6 ? macParts.map(b => b.padStart(2,'0')).join(':').toLowerCase() : '';
             result.ports[i+1] = {
                 name: ifNames[i] || `Port${i+1}`, index: i+1,
                 status: (parseInt(ifStatus[i]) === 1) ? 'up' : 'down',
                 inBytes: parseInt(ifIn[i] || '0'),
                 outBytes: parseInt(ifOut[i] || '0'),
+                speed: parseInt(ifSpeed[i]) || null,
+                mac: formattedMac || null
             };
         }
     }
-    console.log(`[${id}] Poll: CPU=${result.cpu}% Temp=${result.temperature}°C Ports=${Object.keys(result.ports).length}`);
+    console.log(`[${id}] Poll: CPU=${result.cpu}% Temp=${result.temperature}°C Ports=${Object.keys(result.ports).length} Uptime=${result.uptime}s`);
     return result;
 }
 
 function publishTelemetry(id, data) {
     const portList = Object.values(data.ports || {}).map(p => ({
         index: p.index, name: p.name, status: p.status,
-        inBytes: p.inBytes, outBytes: p.outBytes
+        inBytes: p.inBytes, outBytes: p.outBytes,
+        speed: p.speed, mac: p.mac
     }));
+    const sw = switches[id] || {};
+    const mgmtIp = sw.ip || (data.ipAddresses && data.ipAddresses.length > 0
+        ? data.ipAddresses.find(a => a.startsWith('192.168.10.')) || data.ipAddresses.find(a => a.startsWith('192.168.')) || data.ipAddresses[0]
+        : '');
     mqttClient.publish(`switch/${id}/telemetry`, JSON.stringify({
         cpu: data.cpu, memory: data.memory, temperature: data.temperature,
-        ports: data.ports, portList, mac: switches[id]?.mac || ''
+        uptime: data.uptime, model: data.model,
+        switchModel: data.switchModel || '', firmware: data.firmware || '',
+        hostname: data.hostname, ip: mgmtIp, ipAddresses: data.ipAddresses || [],
+        ports: data.ports, portList,
+        mac: sw.mac || '', serial: sw.serial || ''
     }));
 }
 

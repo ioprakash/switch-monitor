@@ -107,6 +107,37 @@ svg.gauge .fg{transition:stroke-dashoffset 0.8s ease}
 .port-tile{cursor:pointer !important}
 .port-section-header:hover{border-color:#2a3040 !important;background:linear-gradient(135deg,#151d2e,#1a2332) !important}
 
+/* ─── Toast Notifications ─────────────────────────────── */
+.toast-container{position:fixed;top:60px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:12px 18px;border-radius:10px;font-size:0.78rem;font-weight:500;pointer-events:auto;animation:toastIn 0.3s ease, toastOut 0.3s ease 4.7s forwards;box-shadow:0 8px 30px #00000066;border:1px solid;max-width:360px}
+.toast.info{background:#0c1a2e;border-color:#1e3a5f;color:#60a5fa}
+.toast.success{background:#0a1f12;border-color:#166534;color:#4ade80}
+.toast.error{background:#1a0a0a;border-color:#520a0a;color:#f87171}
+.toast.warn{background:#1a1408;border-color:#5a4010;color:#fbbf24}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-10px)}}
+
+/* ─── Reboot Confirm Modal ─────────────────────────────── */
+.reboot-modal{background:linear-gradient(145deg,#1a0a0a,#200808);border:1px solid #520a0a;border-radius:16px;padding:32px;text-align:center}
+.reboot-modal .warn-icon{font-size:3rem;margin-bottom:12px}
+.reboot-modal h3{color:#f87171;margin-bottom:8px;font-size:1.1rem}
+.reboot-modal p{color:#94a3b8;font-size:0.8rem;margin-bottom:20px}
+.reboot-modal .reboot-btns{display:flex;gap:12px;justify-content:center}
+.reboot-modal button{padding:10px 24px;border-radius:8px;border:1px solid;font-size:0.8rem;cursor:pointer;font-weight:600}
+.reboot-modal .confirm-reboot{background:#dc2626;border-color:#ef4444;color:#fff}
+.reboot-modal .confirm-reboot:hover{background:#ef4444}
+.reboot-modal .cancel-reboot{background:#1a1f2e;border-color:#2a3040;color:#94a3b8}
+.reboot-modal .cancel-reboot:hover{background:#2a3040}
+
+/* ─── Port Traffic Bar ─────────────────────────────────── */
+.port-traffic-bar{height:3px;background:#1a1f2e;border-radius:2px;margin-top:4px;overflow:hidden}
+.port-traffic-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+
+/* ─── Console Export ───────────────────────────────────── */
+.console-export-row{display:flex;justify-content:flex-end;margin-bottom:8px}
+.console-export-row button{padding:4px 12px;border-radius:6px;border:1px solid #1e2538;background:#111827;color:#64748b;font-size:0.65rem;cursor:pointer}
+.console-export-row button:hover{background:#1a2332;color:#94a3b8}
+
 /* Port Detail Modal */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000aa;z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-overlay.open{display:flex}
@@ -239,7 +270,7 @@ svg.gauge .fg{transition:stroke-dashoffset 0.8s ease}
           📟 Console <span class="tab-count" id="consoleTabCount"></span>
         </div>
         <div class="tab" data-tab="terminal" onclick="switchTab('terminal')">
-          🖥️ Terminal <span class="tab-count">SSH</span>
+          🖥️ SSH/Telnet Console <span class="tab-count">CLI</span>
         </div>
       </div>
 
@@ -263,40 +294,44 @@ svg.gauge .fg{transition:stroke-dashoffset 0.8s ease}
         </div>
 
       <!-- Tab: Console -->
-      <div class="content" id="tab-console" style="height:100%;padding-bottom:0">
-        <div class="console-panel">
-          <div class="qa-bar" style="margin-bottom:10px" id="consoleQuickActions"></div>
-          <div class="console-input-row">
-            <input type="text" id="cmdInput" placeholder="Enter command (e.g. show version, show interface, show running-config)" onkeydown="if(event.key==='Enter')sendCommand()">
-            <button onclick="sendCommand()">▶ Send</button>
-            <button class="secondary" onclick="clearConsole()">Clear</button>
-          </div>
-          <div class="console-history" id="consoleHistory">
-            <div class="console-empty">⌨️ Type a command above and press Enter</div>
-          </div>
+      <div class="content" id="tab-console" style="display:flex;flex-direction:column;height:100%;padding-bottom:16px">
+        <div class="qa-bar" id="consoleQuickActions" style="flex-shrink:0"></div>
+        <div class="console-export-row" style="flex-shrink:0;padding:0 0 8px">
+          <button onclick="exportConsoleHistory()" title="Download command history">📥 Export</button>
+          <button onclick="clearConsole()" style="margin-left:6px">🗑️ Clear</button>
+        </div>
+        <div class="console-history" id="consoleHistory" style="flex:1;min-height:0">
+          <div class="console-empty">⌨️ Type a command above and press Enter + use ↑↓ for history</div>
+        </div>
+        <div class="console-input-row" style="flex-shrink:0;margin-bottom:0">
+          <input type="text" id="cmdInput" placeholder="show version, show interface, show running-config..." onkeydown="handleConsoleKeydown(event)">
+          <button onclick="sendCommand()">▶ Send</button>
         </div>
       </div>
 
       <!-- Tab: Terminal -->
-      <div class="content" id="tab-terminal" style="height:100%;padding-bottom:0;display:flex;flex-direction:column">
-        <div class="term-wrap">
-          <div class="term-header">
-            <div class="term-dots"><div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div></div>
-            <div class="term-title" id="termTitle">admin@bdcom-switch ~ $</div>
+      <div class="content" id="tab-terminal" style="display:flex;flex-direction:column;height:100%;padding:0;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#080a12;border-bottom:1px solid #1a1f2e;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:#ef4444"></div><div style="width:10px;height:10px;border-radius:50%;background:#f59e0b"></div><div style="width:10px;height:10px;border-radius:50%;background:#22c55e"></div></div>
+            <span style="font-family:monospace;font-size:0.72rem;color:#64748b" id="termTitle">admin@bdcom-switch#</span>
           </div>
-          <div class="term-body" id="termBody" tabindex="0" onclick="document.getElementById('termHiddenInput').focus()">
-            <div class="term-line info">╔══════════════════════════════════════════════════════╗</div>
-            <div class="term-line info">║      BDCOM Switch Terminal — Type commands below     ║</div>
-            <div class="term-line info">║  ↑↓ history  |  Tab complete  |  clear  |  help     ║</div>
-            <div class="term-line info">╚══════════════════════════════════════════════════════╝</div>
-          </div>
-          <div class="term-status" id="termStatus">
+          <div style="display:flex;gap:12px;font-size:0.65rem;color:#475569">
             <span>🔌 <span id="termDeviceName">Not connected</span></span>
-            <span>⏎ <span id="termLineCount">0</span> lines</span>
-            <span id="termMode">💰 Normal mode</span>
+            <span>📝 <span id="termLineCount">0</span> lines</span>
+            <span>🔐 MQTT-Telnet</span>
           </div>
         </div>
-        <input type="text" class="term-input-hidden" id="termHiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <div class="term-body" id="termBody" style="flex:1;min-height:0;overflow-y:auto;background:#06080f;padding:12px;font-family:'Courier New',monospace;font-size:0.78rem;line-height:1.6;cursor:text" onclick="termFocus()">
+          <div style="color:#4ade80">╔═══════════════════════════════════════════════════════════╗</div>
+          <div style="color:#4ade80">║  <span style="color:#60a5fa">BDCOM Switch Terminal</span> — Interactive CLI via MQTT Bridge  ║</div>
+          <div style="color:#4ade80">║  <span style="color:#64748b">↑↓ history</span> │ <span style="color:#64748b">Tab complete</span> │ <span style="color:#64748b">Ctrl+U clear line</span> │ <span style="color:#64748b">Ctrl+L clear screen</span>  ║</div>
+          <div style="color:#4ade80">╚═══════════════════════════════════════════════════════════╝</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:8px 12px;background:#0a0d14;border-top:1px solid #1a1f2e;flex-shrink:0;gap:8px">
+          <span style="font-family:monospace;font-size:0.78rem;color:#f59e0b;white-space:nowrap" id="termPromptDisplay">admin@switch#</span>
+          <input type="text" id="termInput" style="flex:1;background:transparent;border:none;color:#22c55e;font-family:'Courier New',monospace;font-size:0.78rem;outline:none" placeholder="Type command and press Enter..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        </div>
       </div>
     </div>
   </div>
@@ -311,6 +346,46 @@ let pollInterval = null;
 let consoleHistory = [];
 let portCount = 0;
 
+function cleanName(v) { return (v || '').toString().replace(/^"|"$/g, '').trim(); }
+function formatSpeed(speed) {
+  if (!speed || speed === 4294967295) return 'Virtual';
+  if (speed >= 1000000000) return (speed/1000000000).toFixed(speed % 1000000000 ? 1 : 0) + ' Gbps';
+  if (speed >= 1000000) return (speed/1000000).toFixed(0) + ' Mbps';
+  if (speed >= 1000) return (speed/1000).toFixed(0) + ' Kbps';
+  return speed + ' bps';
+}
+function formatBytes(b) {
+  b = Number(b || 0);
+  if (b >= 1073741824) return (b/1073741824).toFixed(2)+' GB';
+  if (b >= 1048576) return (b/1048576).toFixed(1)+' MB';
+  if (b >= 1024) return (b/1024).toFixed(1)+' KB';
+  return b+' B';
+}
+
+// ─── Toast Notifications ─────────────────────────────────────
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 5000);
+}
+
+// ─── Reboot Modal ────────────────────────────────────────────
+function showRebootModal() {
+  if (!selectedId) return toast('No switch selected', 'error');
+  document.getElementById('rebootModal').classList.add('open');
+}
+function closeRebootModal() {
+  document.getElementById('rebootModal').classList.remove('open');
+}
+function confirmReboot() {
+  closeRebootModal();
+  quickCmd('reboot');
+  toast('Reboot command sent — switch will restart in a few seconds', 'warn');
+}
+
 // ─── Fetch ────────────────────────────────────────────────────
 async function fetchSwitches() {
   try {
@@ -321,11 +396,10 @@ async function fetchSwitches() {
     updateHeader();
     if (selectedId && switches[selectedId]) renderDevice(selectedId);
     else if (Object.keys(switches).length > 0 && !selectedId) {
-      // Auto-select first online
       const online = Object.values(switches).find(s => s.status === 'online');
       if (online) selectSwitch(online.id);
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to fetch switches: ' + e.message, 'error'); }
 }
 
 // ─── Render Sidebar ──────────────────────────────────────────
@@ -336,13 +410,11 @@ function renderSidebar(filter) {
     el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No switches detected</p></div>';
     return;
   }
-  
   let list = ids.map(id => switches[id]);
   if (filter) {
     const f = filter.toLowerCase();
     list = list.filter(s => (s.name||'').toLowerCase().includes(f) || (s.ip||'').includes(f) || s.id.toLowerCase().includes(f));
   }
-  
   el.innerHTML = list.map(sw => {
     const isActive = sw.id === selectedId;
     const online = sw.status === 'online';
@@ -373,7 +445,6 @@ function selectSwitch(id) {
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('devicePanel').style.display = 'block';
     renderDevice(id);
-    // Trigger fresh data
     quickCmd('show version');
   }
 }
@@ -382,22 +453,30 @@ function selectSwitch(id) {
 function renderDevice(id) {
   const sw = switches[id];
   if (!sw) return;
-  
+
   const online = sw.status === 'online';
   const cpu = sw.cpu;
   const temp = sw.temperature;
   const mem = sw.memory;
   const memTotal = mem ? (mem.total < 1000 ? mem.total + ' MB' : Math.round(mem.total / 1048576) + ' MB') : null;
-  const memPct = mem ? (mem.used > 0 && mem.used < 101 ? mem.used : null) : null;
+  const memPct = mem ? (mem.used >= 0 && mem.used <= 100 ? mem.used : null) : null;
   const upPorts = sw.portList ? sw.portList.filter(p => p.status === 'up').length : '?';
+  const hostname = cleanName(sw.hostname || sw.name || id);
+  const model = cleanName(sw.switchModel || sw.model || 'BDCOM Switch');
+  const firmware = sw.firmware || '';
+  const mgmtIp = sw.ip || (sw.ipAddresses && sw.ipAddresses[0]) || '?';
+  const allIps = Array.isArray(sw.ipAddresses) && sw.ipAddresses.length ? sw.ipAddresses.join(' / ') : mgmtIp;
+  const mac = sw.mac || '—';
   portCount = typeof sw.ports === 'number' ? sw.ports : (sw.portList ? sw.portList.length : 0);
 
-  // Status bar (Monitor tab)
+  // Status bar
   document.getElementById('statusBar').innerHTML = `
-    <div class="item"><span class="label">Device</span><span class="value">${sw.name || id}</span></div>
-    <div class="item"><span class="label">Status</span><span class="value" style="color:${online?'#22c55e':'#ef4444'}"><span class="online-dot ${online?'up':'down'}" style="width:6px;height:6px"></span>${sw.status}</span></div>
-    <div class="item"><span class="label">IP</span><span class="value">${sw.ip || '?'}</span></div>
-    <div class="item"><span class="label">Model</span><span class="value" style="font-size:0.72rem">${(sw.model||'').substring(0,35) || '?'}</span></div>
+    <div class="item"><span class="label">Hostname</span><span class="value">${hostname}</span></div>
+    <div class="item"><span class="label">Status</span><span class="value" style="color:${online?'#22c55e':'#ef4444'}"><span class="online-dot ${online?'up':'down'}" style="width:6px;height:6px"></span>${(sw.status || 'unknown').toUpperCase()}</span></div>
+    <div class="item"><span class="label">Management IP</span><span class="value" style="font-family:monospace;color:#60a5fa">${mgmtIp}</span></div>
+    <div class="item"><span class="label">Uptime</span><span class="value" style="color:#a78bfa">${sw.uptime !== null && sw.uptime !== undefined ? formatUptime(sw.uptime) : 'Polling...'}</span></div>
+    <div class="item" style="min-width:260px"><span class="label">Model</span><span class="value" style="font-size:0.72rem">${model}${firmware ? ' · FW: ' + firmware : ''}</span></div>
+    <div class="item"><span class="label">MAC</span><span class="value" style="font-family:monospace">${mac}</span></div>
     <div class="item"><span class="label">Last Seen</span><span class="value">${sw.lastSeen ? new Date(sw.lastSeen).toLocaleTimeString() : '?'}</span></div>
   `;
 
@@ -411,7 +490,7 @@ function renderDevice(id) {
     <button class="qa-btn" onclick="quickCmd('show logging')">📝 Log</button>
     <button class="qa-btn success" onclick="quickCmd('show vlan')">🏷️ VLAN</button>
     <button class="qa-btn" onclick="quickCmd('show cpu')">📊 CPU</button>
-    <button class="qa-btn danger" onclick="if(confirm('Reboot switch?'))quickCmd('reboot')">⏻ Reboot</button>
+    <button class="qa-btn danger" onclick="showRebootModal()">⏻ Reboot</button>
   `;
 
   // Tiles
@@ -421,7 +500,6 @@ function renderDevice(id) {
   const gaugeOff = gaugeCirc - (gaugeVal / 100) * gaugeCirc;
 
   document.getElementById('tileGrid').innerHTML = `
-    <!-- CPU Gauge -->
     <div class="tile">
       <div class="gauge-wrap">
         <svg class="gauge" viewBox="0 0 80 80">
@@ -433,7 +511,6 @@ function renderDevice(id) {
       <div class="big" style="text-align:center;color:${gaugeColor}">${cpu !== null ? cpu + '%' : 'N/A'}</div>
       <div class="sub" style="text-align:center">${cpu !== null ? (cpu > 80 ? '🔥 High' : cpu > 50 ? '⚡ Moderate' : '✅ Normal') : 'Waiting...'}</div>
     </div>
-    <!-- Temperature -->
     <div class="tile">
       <div class="icon">🌡️</div>
       <div class="title">Temperature</div>
@@ -441,7 +518,6 @@ function renderDevice(id) {
       <div class="sub">${temp !== null ? (temp > 70 ? '⚠️ Critical' : temp > 50 ? '⚡ Warm' : '✅ Normal') : ''}</div>
       ${temp !== null ? `<div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,temp)}%;background:${temp > 70 ? '#ef4444' : temp > 50 ? '#f59e0b' : '#22c55e'}"></div></div>` : ''}
     </div>
-    <!-- Memory -->
     <div class="tile">
       <div class="icon">💾</div>
       <div class="title">Memory</div>
@@ -450,7 +526,6 @@ function renderDevice(id) {
       ${memPct !== null ? `<div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,memPct)}%;background:${memPct > 80 ? '#ef4444' : memPct > 60 ? '#f59e0b' : '#22c55e'}"></div></div>` : ''}
       <div class="footnote">${mem && mem.used ? 'Used: ' + mem.used + '% (' + mem.usedMB + ' MB of ' + mem.total + ' MB)' : ''}</div>
     </div>
-    <!-- Ports Summary -->
     <div class="tile">
       <div class="icon">🔌</div>
       <div class="title">Ports</div>
@@ -458,85 +533,86 @@ function renderDevice(id) {
       <div class="sub">${typeof upPorts === 'number' ? upPorts + ' up' : ''}</div>
       <div class="footnote" onclick="togglePortSection()" style="cursor:pointer;color:#3b82f6">View details →</div>
     </div>
-    <!-- Uptime -->
     <div class="tile">
       <div class="icon">⏱️</div>
       <div class="title">Uptime</div>
-      <div class="big" style="font-size:1.2rem;color:#a78bfa">${sw.uptime ? formatUptime(sw.uptime) : '?'}</div>
-      <div class="sub">System running</div>
+      <div class="big" style="font-size:1.2rem;color:#a78bfa">${sw.uptime !== null && sw.uptime !== undefined ? formatUptime(sw.uptime) : 'N/A'}</div>
+      <div class="sub">SNMP sysUpTime</div>
+      <div class="footnote">${sw.uptime ? Number(sw.uptime).toLocaleString() + ' seconds' : ''}</div>
     </div>
-    <!-- Last Response -->
+    <div class="tile" style="grid-column:span 2;">
+      <div class="icon">🧭</div>
+      <div class="title">Device Identity</div>
+      <div class="big" style="font-size:1rem;color:#60a5fa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hostname}</div>
+      <div class="sub" style="font-family:monospace;color:#94a3b8">IP: ${allIps}</div>
+      <div class="footnote" style="color:#64748b">${model}${firmware ? ' · Firmware: ' + firmware : ''} · MAC ${mac}</div>
+    </div>
     <div class="tile" style="grid-column:span 2;">
       <div class="icon">📡</div>
       <div class="title">Last Response</div>
-      <div class="sub" style="font-family:monospace;font-size:0.65rem;color:#64748b;margin-top:4px;max-height:50px;overflow:hidden">${(sw.lastResponse||'No data').substring(0,200)}</div>
+      <div class="sub" style="font-family:monospace;font-size:0.65rem;color:#64748b;margin-top:4px;max-height:70px;overflow:auto;white-space:pre-wrap">${escapeHtml((sw.lastResponse||'No command response yet').substring(0,240))}</div>
     </div>
   `;
 
-  // Update tab counts
   document.getElementById('monitorTabCount').textContent = cpu !== null ? `CPU ${cpu}%` : '--';
-
   document.getElementById('consoleTabCount').textContent = consoleHistory.length > 0 ? consoleHistory.length + ' cmds' : '0';
 
-  // ─── Ports Section (inline in Monitor tab) ─────────────
   renderPortSection(sw);
-
-  // ─── Terminal Tab ───────────────────────────────────────────
   termPrompt(sw);
-  // Update term title on first visit
-  if (document.getElementById('termBody').querySelector('.term-input-line') === null) {
-    termWriteInput();
-  }
+  if (document.getElementById('termBody').querySelector('.term-input-row') === null) termWriteInput();
 
-  // ─── Console Tab ──────────────────────────────────────────
   document.getElementById('consoleQuickActions').innerHTML = `
     <button class="qa-btn" onclick="quickCmd('show version')">📋 Version</button>
     <button class="qa-btn" onclick="quickCmd('show running-config')">⚙️ Config</button>
-    <button class="qa-btn" onclick="quickCmd('show interface status')">🔌 Port Status</button>
+    <button class="qa-btn" onclick="quickCmd('show interface')">🔌 Interfaces</button>
     <button class="qa-btn" onclick="quickCmd('show vlan')">🏷️ VLAN</button>
     <button class="qa-btn" onclick="quickCmd('show mac address-table')">📇 MAC</button>
-    <button class="qa-btn" onclick="quickCmd('show ip interface brief')">🌐 IP</button>
-    <button class="qa-btn danger" onclick="if(confirm('Reboot switch?'))quickCmd('reboot')">⏻ Reboot</button>
+    <button class="qa-btn" onclick="quickCmd('show ip interface')">🌐 IP</button>
+    <button class="qa-btn" onclick="quickCmd('show arp')">🔗 ARP</button>
+    <button class="qa-btn" onclick="quickCmd('show lldp neighbors')">📡 LLDP</button>
+    <button class="qa-btn" onclick="quickCmd('show spanning-tree')">🌳 STP</button>
+    <button class="qa-btn" onclick="quickCmd('show cpu')">📊 CPU</button>
   `;
 }
 
-// ─── Port Section (inline in Monitor tab) ────────────────────
+// ─── Port Section ─────────────────────────────────────────────
 function renderPortSection(sw) {
   const hasPortData = sw.portList && Array.isArray(sw.portList) && sw.portList.length > 0;
   const ports = hasPortData ? sw.portList : [];
   const up = ports.filter(p => p.status === 'up').length;
   const down = ports.filter(p => p.status === 'down').length;
-  
-  document.getElementById('portSectionTitle').childNodes.length > 1 && document.getElementById('portSectionTitle').childNodes[1].remove();
+
   document.getElementById('portSectionTitle').innerHTML = hasPortData
     ? `🔌 Port Status <span style="font-size:0.7rem;font-weight:400;color:#64748b;margin-left:6px">${ports.length} total</span>`
     : '🔌 Port Status';
-  
-  document.getElementById('portSummaryBadge').textContent = hasPortData
-    ? `${up} up / ${down} down`
-    : 'No data yet';
-  
+  document.getElementById('portSummaryBadge').textContent = hasPortData ? `${up} up / ${down} down` : 'No data yet';
+
   if (!hasPortData) {
-    document.getElementById('portGrid').innerHTML = 
-      '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#475569;font-size:0.78rem">No port data available yet — wait for telemetry or click Refresh</div>';
+    document.getElementById('portGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#475569;font-size:0.78rem">No port data available yet — wait for telemetry or click Refresh</div>';
     return;
   }
 
   window._portData = ports;
-  
-  const formatBytes = b => b > 1048576 ? (b/1048576).toFixed(1)+'MB' : b > 1024 ? (b/1024).toFixed(1)+'KB' : b+'B';
+  const maxBytes = Math.max(...ports.map(p => Math.max(p.inBytes || 0, p.outBytes || 0)), 1);
+
   document.getElementById('portGrid').innerHTML = ports.map(p => {
     const isUp = p.status === 'up';
-    return `<div class="port-tile ${isUp?'up':'down'}" data-port-idx="${p.index}">
+    const name = cleanName(p.name || 'Port');
+    const isPhysical = /^Giga|^Fast|^Ten/i.test(name);
+    const inPct = Math.round((p.inBytes || 0) / maxBytes * 100);
+    const outPct = Math.round((p.outBytes || 0) / maxBytes * 100);
+    return `<div class="port-tile ${isUp?'up':'down'}" data-port-idx="${p.index}" title="${name} · ${formatSpeed(p.speed)} · ${p.mac || ''}">
       <div class="port-led ${isUp?'up':'down'}"></div>
-      <div class="pidx">${p.index || '?'}</div>
-      <div class="pname">${(p.name||'Port').substring(0,18)}</div>
+      <div class="pidx">${isPhysical ? 'PHY' : 'LOG'} #${p.index || '?'}</div>
+      <div class="pname">${name.substring(0,18)}</div>
       <div class="pstatus">${isUp ? '● UP' : '○ DOWN'}</div>
+      <div class="ptraffic" style="color:#94a3b8">${formatSpeed(p.speed)}</div>
       ${p.inBytes !== undefined ? `<div class="ptraffic">↓ ${formatBytes(p.inBytes||0)}</div>` : ''}
       ${p.outBytes !== undefined ? `<div class="ptraffic">↑ ${formatBytes(p.outBytes||0)}</div>` : ''}
+      <div class="port-traffic-bar"><div class="port-traffic-fill" style="width:${inPct}%;background:#60a5fa"></div></div>
     </div>`;
   }).join('');
-  
+
   document.getElementById('portGrid').onclick = function(e) {
     const tile = e.target.closest('.port-tile');
     if (!tile) return;
@@ -554,7 +630,7 @@ function togglePortSection() {
   arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
 }
 
-// ─── Quick Command (sends via API + shows in console) ─────────
+// ─── Quick Command ────────────────────────────────────────────
 function quickCmd(cmd) {
   document.getElementById('cmdInput').value = cmd;
   sendCommand();
@@ -566,12 +642,9 @@ async function sendCommand() {
   const cmd = input.value.trim();
   if (!cmd || !selectedId) return;
   input.value = '';
-  
-  const history = document.getElementById('consoleHistory');
-  
-  // Add command entry
   addConsoleEntry('$ ' + cmd, 'cmd');
-  
+  toast('Command sent: ' + cmd.substring(0, 40), 'info');
+
   try {
     const res = await fetch(API + '/switches/' + selectedId + '/cmd', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -579,8 +652,7 @@ async function sendCommand() {
     });
     await res.json();
     addConsoleEntry('⏳ Executing...', '');
-    
-    // Poll for response
+
     let attempts = 0;
     const prevResp = switches[selectedId]?.lastResponse || '';
     const check = setInterval(async () => {
@@ -592,9 +664,11 @@ async function sendCommand() {
           addConsoleEntry(d.lastResponse.substring(0, 3000), 'resp');
           clearInterval(check);
           switches[selectedId] = d;
+          toast('Response received', 'success');
         } else if (attempts > 12) {
           addConsoleEntry('⌛ No response (timeout after 24s)', 'err');
           clearInterval(check);
+          toast('Command timed out', 'error');
         }
       } catch(e) {
         addConsoleEntry('✗ Error: ' + e.message, 'err');
@@ -603,62 +677,83 @@ async function sendCommand() {
     }, 2000);
   } catch(e) {
     addConsoleEntry('✗ ' + e.message, 'err');
+    toast('Failed to send command', 'error');
   }
-  
-  // Scroll to bottom
-  setTimeout(() => history.scrollTop = history.scrollHeight, 100);
+  setTimeout(() => document.getElementById('consoleHistory').scrollTop = document.getElementById('consoleHistory').scrollHeight, 100);
+}
+
+function handleConsoleKeydown(e) {
+  if (e.key === 'Enter') sendCommand();
+  else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (consoleHistory.length > 0) {
+      const cmds = consoleHistory.filter(h => h.type === 'cmd');
+      if (cmds.length > 0) {
+        const lastCmd = cmds[cmds.length - 1].text.replace(/^\$ /, '');
+        document.getElementById('cmdInput').value = lastCmd;
+      }
+    }
+  }
 }
 
 function addConsoleEntry(text, type) {
   const history = document.getElementById('consoleHistory');
   const empty = history.querySelector('.console-empty');
   if (empty) empty.remove();
-  
   const time = new Date().toLocaleTimeString();
   const div = document.createElement('div');
   div.className = 'console-entry' + (type ? ' ' + type : '');
   div.innerHTML = `<span class="time">${time}</span><span class="text">${escapeHtml(text)}</span>`;
   history.appendChild(div);
   history.scrollTop = history.scrollHeight;
-  
   consoleHistory.push({time, text, type});
   document.getElementById('consoleTabCount').textContent = consoleHistory.length + ' cmds';
 }
 
 function clearConsole() {
-  document.getElementById('consoleHistory').innerHTML = 
-    '<div class="console-empty">⌨️ Type a command above and press Enter</div>';
+  document.getElementById('consoleHistory').innerHTML = '<div class="console-empty">⌨️ Type a command above and press Enter</div>';
   consoleHistory = [];
   document.getElementById('consoleTabCount').textContent = '0';
+}
+
+function exportConsoleHistory() {
+  if (consoleHistory.length === 0) return toast('No history to export', 'warn');
+  const lines = consoleHistory.map(h => `[${h.time}] ${h.text}`).join('\n');
+  const blob = new Blob([lines], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `switch-console-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  toast('History exported', 'success');
 }
 
 function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ─── Terminal ───────────────────────────────────────────────
-// Full interactive terminal: type directly, auto-scroll, history, clear
-
+// ─── Terminal ─────────────────────────────────────────────────
 let termHistory = [];
 let termHistoryIdx = -1;
 let termBuffer = '';
 let termLines = 0;
 
 function termFocus() {
-  setTimeout(() => document.getElementById('termHiddenInput').focus(), 50);
+  setTimeout(() => document.getElementById('termInput').focus(), 50);
 }
 
 function termPrompt(sw) {
-  const name = sw?.name || sw?.ip || selectedId || 'switch';
-  const short = name.replace(/[ _-]/g, '').substring(0, 12).toLowerCase();
-  document.getElementById('termTitle').textContent = 'admin@' + short + ' ~ $';
-  document.getElementById('termDeviceName').textContent = name;
+  const name = cleanName(sw?.hostname || sw?.name || sw?.ip || selectedId || 'switch');
+  const short = name.replace(/[ _-]/g, '').substring(0, 18).toLowerCase();
+  document.getElementById('termTitle').textContent = 'admin@' + short + '#';
+  document.getElementById('termDeviceName').textContent = (sw?.ip ? sw.ip + ' · ' : '') + name;
+  document.getElementById('termPromptDisplay').textContent = 'admin@' + short + '# ';
 }
 
 function termWriteln(text, cls = '') {
   const body = document.getElementById('termBody');
   const div = document.createElement('div');
-  div.className = 'term-line' + (cls ? ' ' + cls : '');
+  div.style.color = cls === 'output' ? '#22c55e' : cls === 'error' ? '#ef4444' : cls === 'info' ? '#60a5fa' : '#94a3b8';
+  div.style.marginBottom = '2px';
   div.textContent = text;
   body.appendChild(div);
   termLines++;
@@ -668,17 +763,15 @@ function termWriteln(text, cls = '') {
 
 function termWriteInput() {
   const body = document.getElementById('termBody');
-  // Remove existing input line
-  const existing = body.querySelector('.term-input-line');
+  const existing = body.querySelector('.term-input-row');
   if (existing) existing.remove();
-  
-  const name = switches[selectedId]?.name || selectedId || 'switch';
-  const short = name.replace(/[ _-]/g, '').substring(0, 12).toLowerCase();
-  const prompt = 'admin@' + short + '#';
-  
   const line = document.createElement('div');
-  line.className = 'term-input-line';
-  line.innerHTML = '<span class="prompt">' + prompt + ' </span>' + escapeHtml(termBuffer) + '<span class="term-cursor"></span>';
+  line.className = 'term-input-row';
+  line.style.display = 'flex';
+  line.style.alignItems = 'center';
+  line.style.gap = '4px';
+  line.style.marginTop = '4px';
+  line.innerHTML = `<span style="color:#f59e0b;font-family:monospace;font-size:0.78rem;white-space:nowrap">${document.getElementById('termPromptDisplay').textContent}</span><span style="color:#22c55e;font-family:monospace;font-size:0.78rem">${escapeHtml(termBuffer)}</span><span style="width:8px;height:18px;background:#22c55e;animation:blink 1s infinite"></span>`;
   body.appendChild(line);
   body.scrollTop = body.scrollHeight;
 }
@@ -693,30 +786,28 @@ function termClear() {
 
 function termExec(cmd) {
   if (!selectedId) return;
-  
-  // Handle local commands
-  if (cmd === 'clear' || cmd === 'cls') {
-    termClear();
-    return;
-  }
+  if (cmd === 'clear' || cmd === 'cls') { termClear(); return; }
   if (cmd === 'help') {
-    termWriteln('Available commands:', 'info');
-    termWriteln('  show version       - System version info', 'info');
-    termWriteln('  show running-config - Full configuration', 'info');
-    termWriteln('  show interface     - Interface status', 'info');
-    termWriteln('  show vlan          - VLAN information', 'info');
-    termWriteln('  show mac address-table - MAC table', 'info');
-    termWriteln('  show ip route      - Routing table', 'info');
-    termWriteln('  show cpu           - CPU utilization', 'info');
-    termWriteln('  reboot             - Restart switch', 'info');
-    termWriteln('  clear              - Clear screen', 'info');
-    termWriteln('  help               - This help', 'info');
+    termWriteln('─── Available Commands ───', 'info');
+    termWriteln('  show version          System version info', 'info');
+    termWriteln('  show running-config   Full configuration', 'info');
+    termWriteln('  show interface        Interface status', 'info');
+    termWriteln('  show vlan             VLAN information', 'info');
+    termWriteln('  show mac address-table MAC table', 'info');
+    termWriteln('  show ip route         Routing table', 'info');
+    termWriteln('  show cpu              CPU utilization', 'info');
+    termWriteln('  show arp              ARP table', 'info');
+    termWriteln('  show lldp neighbors   LLDP neighbors', 'info');
+    termWriteln('  show spanning-tree    Spanning tree', 'info');
+    termWriteln('  show logging          System logs', 'info');
+    termWriteln('  clear                 Clear screen', 'info');
+    termWriteln('  help                  This help', 'info');
     return;
   }
-  
-  // Send via API
+
   termWriteln(cmd, '');
-  
+  toast('Terminal: ' + cmd.substring(0, 30), 'info');
+
   fetch(API + '/switches/' + selectedId + '/cmd', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({cmd})
@@ -727,11 +818,8 @@ function termExec(cmd) {
       attempts++;
       fetch(API + '/switches/' + selectedId).then(r => r.json()).then(d => {
         if (d.lastResponse && d.lastResponse !== prevResp) {
-          // Output response line by line
           const lines = (d.lastResponse || '').split('\n');
-          for (const l of lines) {
-            if (l.trim()) termWriteln(l, 'output');
-          }
+          for (const l of lines) { if (l.trim()) termWriteln(l, 'output'); }
           switches[selectedId] = d;
           clearInterval(check);
           termBuffer = '';
@@ -747,24 +835,21 @@ function termExec(cmd) {
   });
 }
 
-// Handle terminal keyboard input
-document.addEventListener('DOMContentLoaded', () => {
-  const hidden = document.getElementById('termHiddenInput');
-  
-  document.getElementById('termBody').addEventListener('click', () => hidden.focus());
-  
-  hidden.addEventListener('keydown', (e) => {
-    if (document.getElementById('tab-terminal').style.display !== 'block' &&
-        !document.getElementById('tab-terminal').classList.contains('active')) return;
-    
+// Terminal keyboard handling
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.document.addEventListener('DOMContentLoaded', () => {
+  const termInput = document.getElementById('termInput');
+  document.getElementById('termBody').addEventListener('click', () => termInput.focus());
+
+  termInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const cmd = termBuffer.trim();
       if (cmd) {
         termHistory.push(cmd);
         termHistoryIdx = termHistory.length;
-        // Remove input line before executing
         const body = document.getElementById('termBody');
-        const existing = body.querySelector('.term-input-line');
+        const existing = body.querySelector('.term-input-row');
         if (existing) existing.remove();
         termExec(cmd);
       }
@@ -790,40 +875,44 @@ document.addEventListener('DOMContentLoaded', () => {
       termWriteInput();
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      // Simple tab complete for common commands
-      const prefixes = ['show version', 'show running-config', 'show interface', 'show vlan', 
-                        'show mac address-table', 'show ip route', 'show cpu', 'show logging',
-                        'show system', 'show snmp', 'show vlan brief'];
+      const prefixes = ['show version','show running-config','show interface','show vlan',
+                        'show mac address-table','show ip route','show cpu','show logging',
+                        'show arp','show lldp neighbors','show spanning-tree','show snmp',
+                        'show ntp status','show ddm','show ip interface'];
       if (termBuffer.trim()) {
-        const match = prefixes.find(p => p.startsWith(termBuffer.trim()));
-        if (match) termBuffer = match + ' ';
+        const matches = prefixes.filter(p => p.startsWith(termBuffer.trim()));
+        if (matches.length === 1) { termBuffer = matches[0] + ' '; }
+        else if (matches.length > 1) {
+          termWriteln('  ' + matches.join('  '), 'info');
+        }
       }
+      termWriteInput();
+    } else if (e.key === 'l' && e.ctrlKey) {
+      e.preventDefault();
+      termClear();
+    } else if (e.key === 'u' && e.ctrlKey) {
+      e.preventDefault();
+      termBuffer = '';
       termWriteInput();
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
       termBuffer += e.key;
       termWriteInput();
-    } else if (e.key === 'u' && e.ctrlKey) {
-      // Ctrl+U clears line
-      termBuffer = '';
-      termWriteInput();
     }
   });
-});
 
-// Focus terminal when switching to it
-const origSwitchTab = switchTab;
-switchTab = function(name) {
-  origSwitchTab(name);
-  if (name === 'terminal') {
-    setTimeout(() => {
-      termFocus();
-      termPrompt(switches[selectedId]);
-      if (document.getElementById('termBody').querySelector('.term-input-line') === null) {
-        termWriteInput();
-      }
-    }, 100);
-  }
-};
+  // Focus terminal when switching to it
+  const origSwitchTab = switchTab;
+  switchTab = function(name) {
+    origSwitchTab(name);
+    if (name === 'terminal') {
+      setTimeout(() => {
+        termFocus();
+        termPrompt(switches[selectedId]);
+        if (document.getElementById('termBody').querySelector('.term-input-row') === null) termWriteInput();
+      }, 100);
+    }
+  };
+});
 
 // ─── Tab Switching ────────────────────────────────────────────
 function switchTab(name) {
@@ -834,15 +923,16 @@ function switchTab(name) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
-function formatUptime(ticks) {
-  // SNMP timeticks in hundredths of seconds
-  const sec = Math.floor(ticks / 100);
+function formatUptime(seconds) {
+  const sec = Math.max(0, Math.floor(Number(seconds || 0)));
   const d = Math.floor(sec / 86400);
   const h = Math.floor((sec % 86400) / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (d > 0) return d + 'd ' + h + 'h';
+  const s = sec % 60;
+  if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
   if (h > 0) return h + 'h ' + m + 'm';
-  return m + 'm';
+  if (m > 0) return m + 'm ' + s + 's';
+  return s + 's';
 }
 
 function updateHeader() {
@@ -850,8 +940,6 @@ function updateHeader() {
   const online = ids.filter(id => switches[id].status === 'online').length;
   document.getElementById('onlineCount').textContent = online + ' online';
   document.getElementById('totalCount').textContent = ids.length + ' switches';
-  
-  // Show aggregate CPU for header badge
   const onlineSw = ids.filter(id => switches[id].status === 'online');
   const cpus = onlineSw.map(id => switches[id].cpu).filter(c => c !== null && c !== undefined);
   if (cpus.length > 0) {
@@ -862,6 +950,7 @@ function updateHeader() {
 
 function refreshAll() {
   fetchSwitches();
+  toast('Refreshing...', 'info');
 }
 
 // ─── Init ─────────────────────────────────────────────────────
@@ -871,27 +960,6 @@ pollInterval = setInterval(async () => {
   if (selectedId && switches[selectedId]) renderDevice(selectedId);
 }, 120000);
 </script>
-</div>
-</div>
-<!-- ─── Port Detail Modal ──────────────────────────────── -->
-<div class="modal-overlay" id="portModal" onclick="if(event.target===this)closePortModal()">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closePortModal()">✕</button>
-    <div class="modal-title" id="portModalTitle">🔌 Port Details</div>
-    <div class="modal-info-grid" id="portModalInfo"></div>
-    <div class="modal-macs">
-      <div class="m-label">📇 MAC Addresses Learned on This Port</div>
-      <div id="portModalMacs"><div class="modal-mac-empty">Loading...</div></div>
-    </div>
-    <div class="modal-actions">
-      <button class="primary" onclick="fetchPortDetailCmd('show interface','Port')">📋 Show Interface</button>
-      <button onclick="fetchPortDetailCmd('show mac address-table interface','Port')">📇 Show MAC</button>
-      <button onclick="fetchPortDetailCmd('show interface counters','Port')">📊 Counters</button>
-      <button onclick="closePortModal()">Close</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ─── Port Detail Modal ─────────────────────────────────────
 let currentPortName = '';
@@ -900,33 +968,67 @@ let currentPortIdx = '';
 function showPortModal(port, sw) {
   const modal = document.getElementById('portModal');
   const isUp = port.status === 'up';
-  currentPortName = port.name || ('Port ' + port.index);
+  currentPortName = cleanName(port.name || ('Port ' + port.index));
   currentPortIdx = port.index;
-  
-  document.getElementById('portModalTitle').innerHTML = `🔌 <span style="color:${isUp?'#22c55e':'#ef4444'}">●</span> ${port.name || 'Port ' + port.index}`;
-  
-  const formatBytes = b => b > 1048576 ? (b/1048576).toFixed(2)+' MB' : b > 1024 ? (b/1024).toFixed(1)+' KB' : b+' B';
-  
+
+  document.getElementById('portModalTitle').innerHTML = `🔌 <span style="color:${isUp?'#22c55e':'#ef4444'}">●</span> ${currentPortName}`;
+
+  const fb = b => b > 1048576 ? (b/1048576).toFixed(2)+' MB' : b > 1024 ? (b/1024).toFixed(1)+' KB' : b+' B';
+
   document.getElementById('portModalInfo').innerHTML = `
     <div class="modal-info-item"><div class="m-label">Status</div><div class="m-value" style="color:${isUp?'#22c55e':'#ef4444'}">${isUp ? '🟢 UP' : '🔴 DOWN'}</div></div>
     <div class="modal-info-item"><div class="m-label">Port Index</div><div class="m-value">${port.index || '?'}</div></div>
-    <div class="modal-info-item"><div class="m-label">Traffic (In)</div><div class="m-value" style="color:#60a5fa">${port.inBytes !== undefined ? '↓ ' + formatBytes(port.inBytes) : '—'}</div></div>
-    <div class="modal-info-item"><div class="m-label">Traffic (Out)</div><div class="m-value" style="color:#a78bfa">${port.outBytes !== undefined ? '↑ ' + formatBytes(port.outBytes) : '—'}</div></div>
-    <div class="modal-info-item"><div class="m-label">Speed</div><div class="m-value">${port.speed ? (port.speed > 1000000000 ? (port.speed/1000000000).toFixed(0)+' Gbps' : (port.speed/1000000).toFixed(0)+' Mbps') : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Traffic (In)</div><div class="m-value" style="color:#60a5fa">${port.inBytes !== undefined ? '↓ ' + fb(port.inBytes) : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Traffic (Out)</div><div class="m-value" style="color:#a78bfa">${port.outBytes !== undefined ? '↑ ' + fb(port.outBytes) : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Speed</div><div class="m-value">${formatSpeed(port.speed)}</div></div>
     <div class="modal-info-item"><div class="m-label">Duplex</div><div class="m-value" style="color:${port.duplex && port.duplex !== 'unknown' ? '#22c55e' : '#64748b'}">${port.duplex && port.duplex !== 'unknown' ? 'Full Duplex' : '—'}</div></div>
     <div class="modal-info-item"><div class="m-label">MAC Address</div><div class="m-value" style="font-size:0.75rem;color:#94a3b8">${port.mac || (sw.mac || '—')}</div></div>
     <div class="modal-info-item"><div class="m-label">Errors (In)</div><div class="m-value" style="color:${port.inErrors > 0 ? '#f59e0b' : '#22c55e'}">${port.inErrors !== undefined ? port.inErrors : '—'}</div></div>
   `;
-  
-  // Try to fetch MAC table for this port
+
   document.getElementById('portModalMacs').innerHTML = '<div class="modal-loading">⌛ Loading MAC addresses...</div>';
   fetchPortMacTable(currentPortName);
-  
   modal.classList.add('open');
 }
 
 function closePortModal() {
   document.getElementById('portModal').classList.remove('open');
+}
+
+// ─── Port Actions (multi-step commands via config mode) ──────
+function portAction(action) {
+  if (!currentPortName || !selectedId) return;
+  if (action === 'shutdown') {
+    if (!confirm('Shutdown ' + currentPortName + '? This will disconnect traffic on this port.')) return;
+    toast('Shutting down ' + currentPortName + '...', 'warn');
+    sendPortConfigCmds(['interface ' + currentPortName, 'shutdown', 'exit']);
+  } else if (action === 'no shutdown') {
+    toast('Enabling ' + currentPortName + '...', 'success');
+    sendPortConfigCmds(['interface ' + currentPortName, 'no shutdown', 'exit']);
+  }
+}
+
+function portSetDescription() {
+  if (!currentPortName || !selectedId) return;
+  const desc = prompt('Enter description for ' + currentPortName + ':');
+  if (!desc) return;
+  toast('Setting description on ' + currentPortName + '...', 'info');
+  sendPortConfigCmds(['interface ' + currentPortName, 'description ' + desc, 'exit']);
+}
+
+async function sendPortConfigCmds(cmds) {
+  for (const cmd of cmds) {
+    try {
+      await fetch(API + '/switches/' + selectedId + '/cmd', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({cmd})
+      });
+      await new Promise(r => setTimeout(r, 1500));
+    } catch(e) { toast('Error: ' + e.message, 'error'); return; }
+  }
+  toast('Port action completed', 'success');
+  // Refresh
+  setTimeout(() => { fetch(API + '/switches/' + selectedId).then(r => r.json()).then(d => { switches[selectedId] = d; }); }, 2000);
 }
 
 async function fetchPortMacTable(portName) {
@@ -938,7 +1040,7 @@ async function fetchPortMacTable(portName) {
       body: JSON.stringify({cmd})
     });
     await res.json();
-    
+
     let attempts = 0;
     const prev = switches[selectedId]?.lastResponse || '';
     const check = setInterval(() => {
@@ -947,7 +1049,6 @@ async function fetchPortMacTable(portName) {
         if (d.lastResponse && d.lastResponse !== prev) {
           clearInterval(check);
           const lines = (d.lastResponse || '').split('\n');
-          // Parse MAC addresses from response
           const macs = [];
           for (const l of lines) {
             const m = l.match(/([0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}|[0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2})/);
@@ -957,12 +1058,14 @@ async function fetchPortMacTable(portName) {
             }
           }
           if (macs.length > 0) {
-            document.getElementById('portModalMacs').innerHTML = macs.map(m => 
+            document.getElementById('portModalMacs').innerHTML = macs.map(m =>
               `<div class="modal-mac-row"><span style="color:#60a5fa;font-weight:600">${m.mac}</span>  <span style="color:#475569">VLAN ${m.vlan}</span>  <span style="color:#64748b;font-style:italic">${m.type}</span></div>`
             ).join('');
           } else {
-            document.getElementById('portModalMacs').innerHTML = 
-              `<div class="modal-mac-row">` + lines.slice(1, -1).filter(l => l.trim()).join('\n') || '<div class="modal-mac-empty">No MAC addresses learned on this port</div>' + '</div>';
+            const content = lines.slice(1, -1).filter(l => l.trim()).join('\n');
+            document.getElementById('portModalMacs').innerHTML = content
+              ? `<div class="modal-mac-row" style="white-space:pre-wrap;color:#94a3b8">${escapeHtml(content)}</div>`
+              : '<div class="modal-mac-empty">No MAC addresses learned on this port</div>';
           }
           switches[selectedId] = d;
         } else if (attempts > 10) {
@@ -983,14 +1086,14 @@ async function fetchPortDetailCmd(baseCmd, keyword) {
   if (!currentPortName || !selectedId) return;
   const cmd = baseCmd + ' ' + currentPortName;
   document.getElementById('portModalMacs').innerHTML = '<div class="modal-loading">⌛ Executing: ' + cmd + '</div>';
-  
+
   try {
     const res = await fetch(API + '/switches/' + selectedId + '/cmd', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({cmd})
     });
     await res.json();
-    
+
     let attempts = 0;
     const prev = switches[selectedId]?.lastResponse || '';
     const check = setInterval(() => {
@@ -1014,6 +1117,22 @@ async function fetchPortDetailCmd(baseCmd, keyword) {
   }
 }
 </script>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Reboot Confirm Modal -->
+<div class="modal-overlay" id="rebootModal" onclick="if(event.target===this)closeRebootModal()">
+  <div class="modal-box reboot-modal" style="width:400px">
+    <div class="warn-icon">⚠️</div>
+    <h3>Reboot Switch?</h3>
+    <p>This will restart the switch and temporarily disconnect all ports. The switch will take 30-60 seconds to come back online.</p>
+    <div class="reboot-btns">
+      <button class="confirm-reboot" onclick="confirmReboot()">⏻ Yes, Reboot</button>
+      <button class="cancel-reboot" onclick="closeRebootModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
