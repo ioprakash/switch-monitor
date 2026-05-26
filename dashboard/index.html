@@ -387,8 +387,8 @@ function renderDevice(id) {
   const cpu = sw.cpu;
   const temp = sw.temperature;
   const mem = sw.memory;
-  const memTotal = mem ? Math.round(mem.total / 1024 / 1024) : null;
-  const memPct = mem && mem.total > 0 ? Math.round((mem.used / mem.total) * 100) : null;
+  const memTotal = mem ? (mem.total < 1000 ? mem.total + ' MB' : Math.round(mem.total / 1048576) + ' MB') : null;
+  const memPct = mem ? (mem.used > 0 && mem.used < 101 ? mem.used : null) : null;
   const upPorts = sw.portList ? sw.portList.filter(p => p.status === 'up').length : '?';
   portCount = typeof sw.ports === 'number' ? sw.ports : (sw.portList ? sw.portList.length : 0);
 
@@ -445,10 +445,10 @@ function renderDevice(id) {
     <div class="tile">
       <div class="icon">💾</div>
       <div class="title">Memory</div>
-      <div class="big" style="color:${memPct !== null ? (memPct > 80 ? '#ef4444' : memPct > 60 ? '#f59e0b' : '#22c55e') : '#475569'}">${memTotal ? memTotal + 'MB' : 'N/A'}</div>
-      <div class="sub">${memPct !== null ? 'Used: ' + Math.round(mem.used/1024/1024*100)/100 + 'MB' : ''}</div>
+      <div class="big" style="color:${memPct !== null ? (memPct > 80 ? '#ef4444' : memPct > 60 ? '#f59e0b' : '#22c55e') : '#475569'}">${memTotal || 'N/A'}</div>
+      <div class="sub">${memPct !== null ? 'Used: ' + memPct + '%' : ''}</div>
       ${memPct !== null ? `<div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,memPct)}%;background:${memPct > 80 ? '#ef4444' : memPct > 60 ? '#f59e0b' : '#22c55e'}"></div></div>` : ''}
-      <div class="footnote">${mem ? Math.round(mem.free/1024/1024*100)/100 + 'MB free' : ''}</div>
+      <div class="footnote">${mem && mem.used ? 'Used: ' + mem.used + '% (' + mem.usedMB + ' MB of ' + mem.total + ' MB)' : ''}</div>
     </div>
     <!-- Ports Summary -->
     <div class="tile">

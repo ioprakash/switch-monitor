@@ -73,7 +73,12 @@ async function pollSwitch(sw) {
     const totalMem = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.2.0');
     const usedMem = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.5.0');
     const freeMem = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.3.0');
-    if (totalMem) result.memory = { total: totalMem, used: usedMem || 0, free: freeMem || 0 };
+    if (totalMem) {
+        // total is in bytes (134217728 = 128 MB); used looks like percentage (82 = 82%)
+        const totalMB = Math.round(totalMem / 1048576);
+        const usedPct = usedMem;
+        result.memory = { total: totalMB, used: usedPct, usedMB: Math.round(totalMB * usedPct / 100) };
+    };
     const temp = snmpGet(ip, community, '.1.3.6.1.4.1.3320.9.48.6.0');
     if (temp !== null) result.temperature = temp;
     const ifNames = snmpWalk(ip, community, '.1.3.6.1.2.1.2.2.1.2');
