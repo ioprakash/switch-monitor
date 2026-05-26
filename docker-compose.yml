@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    container_name: switch-monitor-backend
+    ports:
+      - "3002:3002"
+    environment:
+      - MQTT_BROKER=tcp://192.168.10.10:1883
+    restart: unless-stopped
+    networks:
+      - switch-net
+
+  dashboard:
+    build: ./dashboard
+    container_name: switch-monitor-dashboard
+    ports:
+      - "7575:80"
+    restart: unless-stopped
+    networks:
+      - switch-net
+
+networks:
+  switch-net:
+    driver: bridge

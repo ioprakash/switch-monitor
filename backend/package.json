@@ -1,0 +1,11 @@
+{
+  "name": "switch-monitor-backend",
+  "version": "1.0.0",
+  "description": "Standalone backend for BDCOM switch monitoring via MQTT",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mqtt": "^5.3.0",
+    "cors": "^2.8.5"
+  }
+}

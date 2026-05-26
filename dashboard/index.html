@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Switch Monitor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter','Segoe UI',system-ui,sans-serif}
+body{background:#0b0e17;color:#e2e8f0;min-height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a3040;border-radius:3px}
+
+/* Header */
+.header{background:linear-gradient(135deg,#0f172a 0%,#1a2332 100%);border-bottom:1px solid #1e293b;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:14px}
+.header h1{font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.3px}
+.header h1 span{background:none;-webkit-text-fill-color:#64748b;font-weight:400}
+.header-right{display:flex;align-items:center;gap:12px}
+.badge{padding:4px 12px;border-radius:20px;font-size:0.68rem;font-weight:600;background:#1a2332;color:#64748b;border:1px solid #2a3040}
+.badge.online{background:#052e1622;border-color:#16653444;color:#4ade80}
+.badge.offline{background:#2a0a0a22;border-color:#520a0a44;color:#f87171}
+.badge.cpu{background:#1e3a5f22;border-color:#1e3a5f44;color:#60a5fa}
+.refresh-btn{background:transparent;border:1px solid #2a3040;color:#64748b;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.7rem;transition:all 0.15s}
+.refresh-btn:hover{background:#1a2332;color:#94a3b8;border-color:#3b82f6}
+
+/* Layout */
+.app{display:flex;height:calc(100vh - 53px)}
+.sidebar{width:280px;min-width:280px;background:#090c14;border-right:1px solid #1a1f2e;display:flex;flex-direction:column}
+.sidebar-search{padding:12px;border-bottom:1px solid #1a1f2e}
+.sidebar-search input{width:100%;padding:8px 12px;background:#0a0d14;border:1px solid #1e2538;border-radius:8px;color:#e2e8f0;font-size:0.78rem;outline:none}
+.sidebar-search input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f620}
+.sidebar-list{flex:1;overflow-y:auto;padding:8px}
+
+/* Switch Cards */
+.sw-card{padding:12px;margin-bottom:6px;border-radius:10px;cursor:pointer;transition:all 0.2s;border:1px solid transparent;background:#111827}
+.sw-card:hover{border-color:#2a3040;background:#151d2e;transform:translateX(2px)}
+.sw-card.active{background:linear-gradient(135deg,#1a2332,#151d2e);border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f620}
+.sw-card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sw-card .name{font-size:0.78rem;font-weight:600;color:#e2e8f0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw-card .ip{font-size:0.65rem;color:#475569;font-family:monospace}
+.sw-card .stats{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.sw-card .stat{padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:600;background:#1a1f2e}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Tabs */
+.tabs{display:flex;background:#0a0d14;border-bottom:1px solid #1a1f2e;padding:0 16px;gap:0}
+.tab{padding:12px 20px;cursor:pointer;font-size:0.78rem;font-weight:500;color:#64748b;border-bottom:2px solid transparent;transition:all 0.15s;user-select:none;display:flex;align-items:center;gap:6px}
+.tab:hover{color:#94a3b8;background:#11182722}
+.tab.active{color:#3b82f6;border-bottom-color:#3b82f6;background:linear-gradient(0deg,#3b82f608,transparent)}
+.tab-count{padding:1px 6px;border-radius:10px;background:#1e293b;font-size:0.6rem;color:#64748b}
+
+/* Content */
+.content{flex:1;overflow-y:auto;padding:16px;display:none}
+.content.active{display:block}
+
+/* Status bar */
+.status-bar{background:linear-gradient(135deg,#111827,#151d2e);border:1px solid #1e2538;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.status-bar .item{display:flex;flex-direction:column;gap:2px}
+.status-bar .label{color:#475569;font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.status-bar .value{color:#e2e8f0;font-size:0.82rem;font-weight:500}
+.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.online-dot.up{background:#22c55e;box-shadow:0 0 8px #22c55e66;animation:pulse 2s infinite}
+.online-dot.down{background:#ef4444}
+@keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
+
+/* Tiles Grid */
+.tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.tile{background:linear-gradient(145deg,#111827,#151d2e);border:1px solid #1e2538;border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:all 0.2s}
+.tile:hover{border-color:#2a3040;transform:translateY(-1px);box-shadow:0 4px 20px #00000044}
+.tile .icon{font-size:1.5rem;margin-bottom:8px}
+.tile .title{font-size:0.62rem;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.tile .big{font-size:1.6rem;font-weight:700;font-family:monospace;letter-spacing:-1px}
+.tile .sub{font-size:0.7rem;color:#475569;margin-top:4px}
+.tile .footnote{font-size:0.6rem;color:#334155;margin-top:6px}
+
+/* Progress bar inside tile */
+.bar-wrap{height:5px;background:#1a1f2e;border-radius:4px;overflow:hidden;margin-top:8px}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
+
+/* Gauge ring */
+.gauge-wrap{display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+svg.gauge{width:80px;height:80px;transform:rotate(-90deg)}
+svg.gauge circle{fill:none;stroke-width:6;stroke-linecap:round}
+svg.gauge .bg{stroke:#1a1f2e}
+svg.gauge .fg{transition:stroke-dashoffset 0.8s ease}
+
+/* Ports */
+.port-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+.port-tile{padding:10px 6px;border-radius:10px;text-align:center;font-size:0.7rem;transition:all 0.15s;cursor:default;position:relative}
+.port-tile:hover{transform:translateY(-2px)}
+.port-tile.up{background:linear-gradient(180deg,#052e16,#0a3d1a);border:1px solid #16653466;color:#86efac}
+.port-tile.up .pstatus{color:#4ade80}
+.port-tile.down{background:linear-gradient(180deg,#2a0a0a,#3a0a0a);border:1px solid #520a0a66;color:#fca5a5}
+.port-tile.down .pstatus{color:#f87171}
+.port-tile .pidx{font-size:0.6rem;color:inherit;opacity:0.6;margin-bottom:2px}
+.port-tile .pname{font-weight:600;font-size:0.65rem;margin-bottom:1px}
+.port-tile .pstatus{font-size:0.6rem;font-weight:600}
+.port-tile .ptraffic{font-size:0.55rem;opacity:0.5;margin-top:2px;font-family:monospace}
+.port-tile .port-led{width:6px;height:6px;border-radius:50%;margin:0 auto 4px}
+.port-tile .port-led.up{background:#22c55e;box-shadow:0 0 6px #22c55e88}
+.port-tile .port-led.down{background:#ef444444}
+
+/* Console tab */
+.port-tile{cursor:pointer !important}
+.port-section-header:hover{border-color:#2a3040 !important;background:linear-gradient(135deg,#151d2e,#1a2332) !important}
+
+/* Port Detail Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000aa;z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal-box{background:linear-gradient(145deg,#111827,#151d2e);border:1px solid #1e2538;border-radius:16px;width:600px;max-width:94vw;max-height:80vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 20px 60px #00000066}
+.modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#475569;font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all 0.15s}
+.modal-close:hover{background:#1a1f2e;color:#e2e8f0}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.modal-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.modal-info-item{background:#0a0d14;border:1px solid #1a1f2e;border-radius:10px;padding:12px}
+.modal-info-item .m-label{font-size:0.6rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.modal-info-item .m-value{font-size:0.85rem;font-weight:600;font-family:monospace}
+.modal-macs{background:#0a0d14;border:1px solid #1a1f2e;border-radius:10px;padding:12px;margin-bottom:12px}
+.modal-macs .m-label{font-size:0.6rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.modal-mac-row{font-family:monospace;font-size:0.72rem;color:#94a3b8;padding:3px 0;border-bottom:1px solid #1a1f2e44}
+.modal-mac-row:last-child{border-bottom:none}
+.modal-mac-empty{font-size:0.7rem;color:#334155;padding:8px}
+.modal-actions{display:flex;gap:8px;margin-top:12px}
+.modal-actions button{padding:8px 16px;border-radius:8px;border:1px solid #1e2538;background:#1a2332;color:#94a3b8;cursor:pointer;font-size:0.72rem}
+.modal-actions button:hover{background:#2a3040;color:#e2e8f0;border-color:#3b82f6}
+.modal-actions button.primary{background:#2563eb;border-color:#3b82f6;color:#fff}
+.modal-actions button.primary:hover{background:#3b82f6}
+
+.modal-loading{color:#475569;font-size:0.7rem;padding:8px;font-family:monospace}
+
+.console-panel{display:flex;flex-direction:column;height:100%}
+.console-input-row{display:flex;gap:8px;margin-bottom:12px}
+.console-input-row input{flex:1;padding:10px 14px;background:#0a0d14;border:1px solid #1e2538;border-radius:8px;color:#e2e8f0;font-family:monospace;font-size:0.82rem;outline:none;transition:border-color 0.15s}
+.console-input-row input:focus{border-color:#3b82f6}
+.console-input-row button{padding:10px 22px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-size:0.78rem;transition:opacity 0.15s}
+.console-input-row button:hover{opacity:0.9}
+.console-input-row button.secondary{background:#1a1f2e;color:#64748b}
+.console-input-row button.secondary:hover{background:#2a3040;color:#94a3b8}
+
+.console-history{flex:1;background:#060910;border:1px solid #1a1f2e;border-radius:12px;overflow-y:auto;font-family:monospace;font-size:0.72rem;padding:12px}
+.console-entry{margin-bottom:12px;padding:8px 12px;border-radius:8px}
+.console-entry.cmd{background:#0d111c;border-left:2px solid #3b82f6}
+.console-entry.cmd .text{color:#93c5fd}
+.console-entry.resp{background:#0a0d14;border-left:2px solid #22c55e;color:#86efac}
+.console-entry.err{background:#1a0a0a;border-left:2px solid #ef4444;color:#fca5a5}
+.console-entry .time{font-size:0.55rem;color:#334155;margin-right:8px}
+.console-entry .prompt{color:#475569}
+.console-empty{color:#334155;text-align:center;padding:40px;font-family:monospace;font-size:0.8rem}
+
+/* Quick actions */
+.qa-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.qa-btn{padding:7px 14px;border-radius:8px;border:1px solid #1e2538;background:#111827;color:#94a3b8;font-size:0.72rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s;font-weight:500}
+.qa-btn:hover{background:#1a2332;border-color:#3b8266;color:#60a5fa;transform:translateY(-1px)}
+.qa-btn.danger:hover{border-color:#ef4444;color:#ef4444}
+.qa-btn.success:hover{border-color:#22c55e;color:#22c55e}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#475569;gap:10px}
+.spinner{width:18px;height:18px;border:2px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:80px 20px;color:#475569}
+.empty-state .big-icon{font-size:3rem;margin-bottom:16px}
+.empty-state h3{font-size:1rem;color:#64748b;margin-bottom:8px;font-weight:500}
+.empty-state p{font-size:0.78rem}
+
+/* ─── Terminal Tab ─────────────────────────── */
+.term-wrap{background:#0a0c10;border:1px solid #1a1f2e;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:100%}
+.term-header{display:flex;align-items:center;gap:10px;padding:8px 16px;background:#11141c;border-bottom:1px solid #1a1f2e;user-select:none}
+.term-dots{display:flex;gap:6px}
+.term-dot{width:10px;height:10px;border-radius:50%}
+.term-dot.r{background:#ef4444}
+.term-dot.y{background:#f59e0b}
+.term-dot.g{background:#22c55e}
+.term-title{color:#475569;font-size:0.7rem;font-family:monospace;flex:1}
+.term-body{flex:1;padding:14px 16px;font-family:'Fira Code','Cascadia Code','JetBrains Mono','Consolas',monospace;font-size:0.8rem;line-height:1.6;color:#e2e8f0;overflow-y:auto;white-space:pre-wrap;word-break:break-all;background:#0a0c10;min-height:300px;outline:none;cursor:text}
+.term-body:empty:before{content:'Waiting...';color:#334155}
+.term-line{margin:0;word-break:break-all}
+.term-line .prompt{color:#3b82f6;font-weight:600}
+.term-line .error{color:#ef4444}
+.term-line .output{color:#86efac}
+.term-line .info{color:#94a3b8}
+.term-input-line{display:flex;align-items:center;margin:0}
+.term-input-line .prompt{color:#3b82f6;font-weight:600;margin-right:6px;white-space:pre}
+.term-cursor{display:inline-block;width:7px;height:15px;background:#22c55e;animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.term-input-hidden{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
+.term-status{color:#475569;font-size:0.62rem;padding:6px 16px;border-top:1px solid #1a1f2e;font-family:monospace;display:flex;gap:16px}
+.term-status span{display:flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>⚡ Switch Monitor <span>| Network</span></h1>
+  </div>
+  <div class="header-right">
+    <span class="badge online" id="onlineCount">0 online</span>
+    <span class="badge" id="totalCount">0 switches</span>
+    <span class="badge cpu" id="cpuBadge">--</span>
+    <span style="color:#334155;font-size:0.65rem" id="refreshTimer">auto 2m</span>
+    <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-search">
+      <input type="text" placeholder="🔍 Search switches..." id="searchInput" oninput="filterSwitches(this.value)">
+    </div>
+    <div class="sidebar-list" id="switchList">
+      <div class="loading"><div class="spinner"></div> Loading...</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState">
+      <div class="big-icon">🔌</div>
+      <h3>Select a switch</h3>
+      <p>Click a switch from the sidebar to view live monitoring data</p>
+    </div>
+
+    <!-- Device Panel -->
+    <div id="devicePanel" style="display:none">
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')">
+          📊 Live Monitor <span class="tab-count" id="monitorTabCount"></span>
+        </div>
+
+        <div class="tab" data-tab="console" onclick="switchTab('console')">
+          📟 Console <span class="tab-count" id="consoleTabCount"></span>
+        </div>
+        <div class="tab" data-tab="terminal" onclick="switchTab('terminal')">
+          🖥️ Terminal <span class="tab-count">SSH</span>
+        </div>
+      </div>
+
+      <!-- Tab: Monitor (merged with ports) -->
+      <div class="content active" id="tab-monitor">
+        <div class="status-bar" id="statusBar"></div>
+        <div class="qa-bar" id="qaBar"></div>
+        <div class="tile-grid" id="tileGrid"></div>
+        <div id="portSection" style="margin-top:16px">
+          <div class="port-section-header" onclick="togglePortSection()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#111827,#151d2e);border:1px solid #1e2538;border-radius:12px;cursor:pointer;margin-bottom:12px;transition:all 0.15s;user-select:none">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:1rem">🔌</span>
+              <span style="font-weight:600;font-size:0.85rem" id="portSectionTitle">Port Status</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span id="portSummaryBadge" style="font-size:0.7rem;color:#64748b"></span>
+              <span id="portToggleArrow" style="color:#475569;font-size:0.8rem;transition:transform 0.2s">▼</span>
+            </div>
+          </div>
+          <div id="portGrid" class="port-grid" style="display:none;margin-bottom:12px"></div>
+        </div>
+
+      <!-- Tab: Console -->
+      <div class="content" id="tab-console" style="height:100%;padding-bottom:0">
+        <div class="console-panel">
+          <div class="qa-bar" style="margin-bottom:10px" id="consoleQuickActions"></div>
+          <div class="console-input-row">
+            <input type="text" id="cmdInput" placeholder="Enter command (e.g. show version, show interface, show running-config)" onkeydown="if(event.key==='Enter')sendCommand()">
+            <button onclick="sendCommand()">▶ Send</button>
+            <button class="secondary" onclick="clearConsole()">Clear</button>
+          </div>
+          <div class="console-history" id="consoleHistory">
+            <div class="console-empty">⌨️ Type a command above and press Enter</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Terminal -->
+      <div class="content" id="tab-terminal" style="height:100%;padding-bottom:0;display:flex;flex-direction:column">
+        <div class="term-wrap">
+          <div class="term-header">
+            <div class="term-dots"><div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div></div>
+            <div class="term-title" id="termTitle">admin@bdcom-switch ~ $</div>
+          </div>
+          <div class="term-body" id="termBody" tabindex="0" onclick="document.getElementById('termHiddenInput').focus()">
+            <div class="term-line info">╔══════════════════════════════════════════════════════╗</div>
+            <div class="term-line info">║      BDCOM Switch Terminal — Type commands below     ║</div>
+            <div class="term-line info">║  ↑↓ history  |  Tab complete  |  clear  |  help     ║</div>
+            <div class="term-line info">╚══════════════════════════════════════════════════════╝</div>
+          </div>
+          <div class="term-status" id="termStatus">
+            <span>🔌 <span id="termDeviceName">Not connected</span></span>
+            <span>⏎ <span id="termLineCount">0</span> lines</span>
+            <span id="termMode">💰 Normal mode</span>
+          </div>
+        </div>
+        <input type="text" class="term-input-hidden" id="termHiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────
+const API = window.location.origin + '/api';
+let switches = {};
+let selectedId = null;
+let pollInterval = null;
+let consoleHistory = [];
+let portCount = 0;
+
+// ─── Fetch ────────────────────────────────────────────────────
+async function fetchSwitches() {
+  try {
+    const res = await fetch(API + '/switches');
+    const list = await res.json();
+    for (const sw of list) switches[sw.id] = {...switches[sw.id], ...sw};
+    renderSidebar();
+    updateHeader();
+    if (selectedId && switches[selectedId]) renderDevice(selectedId);
+    else if (Object.keys(switches).length > 0 && !selectedId) {
+      // Auto-select first online
+      const online = Object.values(switches).find(s => s.status === 'online');
+      if (online) selectSwitch(online.id);
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ─── Render Sidebar ──────────────────────────────────────────
+function renderSidebar(filter) {
+  const el = document.getElementById('switchList');
+  const ids = Object.keys(switches);
+  if (ids.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No switches detected</p></div>';
+    return;
+  }
+  
+  let list = ids.map(id => switches[id]);
+  if (filter) {
+    const f = filter.toLowerCase();
+    list = list.filter(s => (s.name||'').toLowerCase().includes(f) || (s.ip||'').includes(f) || s.id.toLowerCase().includes(f));
+  }
+  
+  el.innerHTML = list.map(sw => {
+    const isActive = sw.id === selectedId;
+    const online = sw.status === 'online';
+    const cpu = sw.cpu !== undefined && sw.cpu !== null ? sw.cpu : null;
+    const temp = sw.temperature !== undefined && sw.temperature !== null ? sw.temperature : null;
+    return `<div class="sw-card ${isActive?'active':''}" onclick="selectSwitch('${sw.id}')">
+      <div class="top">
+        <span class="online-dot ${online?'up':'down'}" style="width:6px;height:6px"></span>
+        <span class="name">${sw.name || sw.id}</span>
+      </div>
+      <div class="ip">${sw.ip || '?'}</div>
+      <div class="stats">
+        <span class="stat" style="color:${online?'#4ade80':'#f87171'}">${online?'● ONLINE':'○ OFFLINE'}</span>
+        ${cpu !== null ? `<span class="stat" style="color:#60a5fa">CPU ${cpu}%</span>` : ''}
+        ${temp !== null ? `<span class="stat" style="color:#f59e0b">${temp}°C</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterSwitches(val) { renderSidebar(val); }
+
+// ─── Select Switch ────────────────────────────────────────────
+function selectSwitch(id) {
+  selectedId = id;
+  renderSidebar();
+  if (switches[id]) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('devicePanel').style.display = 'block';
+    renderDevice(id);
+    // Trigger fresh data
+    quickCmd('show version');
+  }
+}
+
+// ─── Render Device ────────────────────────────────────────────
+function renderDevice(id) {
+  const sw = switches[id];
+  if (!sw) return;
+  
+  const online = sw.status === 'online';
+  const cpu = sw.cpu;
+  const temp = sw.temperature;
+  const mem = sw.memory;
+  const memTotal = mem ? Math.round(mem.total / 1024 / 1024) : null;
+  const memPct = mem && mem.total > 0 ? Math.round((mem.used / mem.total) * 100) : null;
+  const upPorts = sw.portList ? sw.portList.filter(p => p.status === 'up').length : '?';
+  portCount = typeof sw.ports === 'number' ? sw.ports : (sw.portList ? sw.portList.length : 0);
+
+  // Status bar (Monitor tab)
+  document.getElementById('statusBar').innerHTML = `
+    <div class="item"><span class="label">Device</span><span class="value">${sw.name || id}</span></div>
+    <div class="item"><span class="label">Status</span><span class="value" style="color:${online?'#22c55e':'#ef4444'}"><span class="online-dot ${online?'up':'down'}" style="width:6px;height:6px"></span>${sw.status}</span></div>
+    <div class="item"><span class="label">IP</span><span class="value">${sw.ip || '?'}</span></div>
+    <div class="item"><span class="label">Model</span><span class="value" style="font-size:0.72rem">${(sw.model||'').substring(0,35) || '?'}</span></div>
+    <div class="item"><span class="label">Last Seen</span><span class="value">${sw.lastSeen ? new Date(sw.lastSeen).toLocaleTimeString() : '?'}</span></div>
+  `;
+
+  // Quick Actions
+  document.getElementById('qaBar').innerHTML = `
+    <button class="qa-btn" onclick="quickCmd('show version')">📋 Version</button>
+    <button class="qa-btn" onclick="quickCmd('show running-config')">⚙️ Config</button>
+    <button class="qa-btn" onclick="quickCmd('show interface')">🔌 Interfaces</button>
+    <button class="qa-btn" onclick="quickCmd('show mac address-table')">📇 MAC Table</button>
+    <button class="qa-btn" onclick="quickCmd('show ip route')">🌐 Route</button>
+    <button class="qa-btn" onclick="quickCmd('show logging')">📝 Log</button>
+    <button class="qa-btn success" onclick="quickCmd('show vlan')">🏷️ VLAN</button>
+    <button class="qa-btn" onclick="quickCmd('show cpu')">📊 CPU</button>
+    <button class="qa-btn danger" onclick="if(confirm('Reboot switch?'))quickCmd('reboot')">⏻ Reboot</button>
+  `;
+
+  // Tiles
+  const gaugeVal = cpu !== null ? Math.min(cpu, 100) : 0;
+  const gaugeColor = cpu !== null ? (cpu > 80 ? '#ef4444' : cpu > 60 ? '#f59e0b' : '#22c55e') : '#475569';
+  const gaugeCirc = 2 * Math.PI * 34;
+  const gaugeOff = gaugeCirc - (gaugeVal / 100) * gaugeCirc;
+
+  document.getElementById('tileGrid').innerHTML = `
+    <!-- CPU Gauge -->
+    <div class="tile">
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 80 80">
+          <circle class="bg" cx="40" cy="40" r="34"/>
+          <circle class="fg" cx="40" cy="40" r="34" stroke="${gaugeColor}" stroke-dasharray="${gaugeCirc}" stroke-dashoffset="${gaugeOff}"/>
+        </svg>
+      </div>
+      <div class="title" style="text-align:center">CPU Load</div>
+      <div class="big" style="text-align:center;color:${gaugeColor}">${cpu !== null ? cpu + '%' : 'N/A'}</div>
+      <div class="sub" style="text-align:center">${cpu !== null ? (cpu > 80 ? '🔥 High' : cpu > 50 ? '⚡ Moderate' : '✅ Normal') : 'Waiting...'}</div>
+    </div>
+    <!-- Temperature -->
+    <div class="tile">
+      <div class="icon">🌡️</div>
+      <div class="title">Temperature</div>
+      <div class="big" style="color:${temp !== null ? (temp > 70 ? '#ef4444' : temp > 50 ? '#f59e0b' : '#22c55e') : '#475569'}">${temp !== null ? temp + '°C' : 'N/A'}</div>
+      <div class="sub">${temp !== null ? (temp > 70 ? '⚠️ Critical' : temp > 50 ? '⚡ Warm' : '✅ Normal') : ''}</div>
+      ${temp !== null ? `<div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,temp)}%;background:${temp > 70 ? '#ef4444' : temp > 50 ? '#f59e0b' : '#22c55e'}"></div></div>` : ''}
+    </div>
+    <!-- Memory -->
+    <div class="tile">
+      <div class="icon">💾</div>
+      <div class="title">Memory</div>
+      <div class="big" style="color:${memPct !== null ? (memPct > 80 ? '#ef4444' : memPct > 60 ? '#f59e0b' : '#22c55e') : '#475569'}">${memTotal ? memTotal + 'MB' : 'N/A'}</div>
+      <div class="sub">${memPct !== null ? 'Used: ' + Math.round(mem.used/1024/1024*100)/100 + 'MB' : ''}</div>
+      ${memPct !== null ? `<div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,memPct)}%;background:${memPct > 80 ? '#ef4444' : memPct > 60 ? '#f59e0b' : '#22c55e'}"></div></div>` : ''}
+      <div class="footnote">${mem ? Math.round(mem.free/1024/1024*100)/100 + 'MB free' : ''}</div>
+    </div>
+    <!-- Ports Summary -->
+    <div class="tile">
+      <div class="icon">🔌</div>
+      <div class="title">Ports</div>
+      <div class="big" style="color:#60a5fa">${portCount}</div>
+      <div class="sub">${typeof upPorts === 'number' ? upPorts + ' up' : ''}</div>
+      <div class="footnote" onclick="togglePortSection()" style="cursor:pointer;color:#3b82f6">View details →</div>
+    </div>
+    <!-- Uptime -->
+    <div class="tile">
+      <div class="icon">⏱️</div>
+      <div class="title">Uptime</div>
+      <div class="big" style="font-size:1.2rem;color:#a78bfa">${sw.uptime ? formatUptime(sw.uptime) : '?'}</div>
+      <div class="sub">System running</div>
+    </div>
+    <!-- Last Response -->
+    <div class="tile" style="grid-column:span 2;">
+      <div class="icon">📡</div>
+      <div class="title">Last Response</div>
+      <div class="sub" style="font-family:monospace;font-size:0.65rem;color:#64748b;margin-top:4px;max-height:50px;overflow:hidden">${(sw.lastResponse||'No data').substring(0,200)}</div>
+    </div>
+  `;
+
+  // Update tab counts
+  document.getElementById('monitorTabCount').textContent = cpu !== null ? `CPU ${cpu}%` : '--';
+
+  document.getElementById('consoleTabCount').textContent = consoleHistory.length > 0 ? consoleHistory.length + ' cmds' : '0';
+
+  // ─── Ports Section (inline in Monitor tab) ─────────────
+  renderPortSection(sw);
+
+  // ─── Terminal Tab ───────────────────────────────────────────
+  termPrompt(sw);
+  // Update term title on first visit
+  if (document.getElementById('termBody').querySelector('.term-input-line') === null) {
+    termWriteInput();
+  }
+
+  // ─── Console Tab ──────────────────────────────────────────
+  document.getElementById('consoleQuickActions').innerHTML = `
+    <button class="qa-btn" onclick="quickCmd('show version')">📋 Version</button>
+    <button class="qa-btn" onclick="quickCmd('show running-config')">⚙️ Config</button>
+    <button class="qa-btn" onclick="quickCmd('show interface status')">🔌 Port Status</button>
+    <button class="qa-btn" onclick="quickCmd('show vlan')">🏷️ VLAN</button>
+    <button class="qa-btn" onclick="quickCmd('show mac address-table')">📇 MAC</button>
+    <button class="qa-btn" onclick="quickCmd('show ip interface brief')">🌐 IP</button>
+    <button class="qa-btn danger" onclick="if(confirm('Reboot switch?'))quickCmd('reboot')">⏻ Reboot</button>
+  `;
+}
+
+// ─── Port Section (inline in Monitor tab) ────────────────────
+function renderPortSection(sw) {
+  const hasPortData = sw.portList && Array.isArray(sw.portList) && sw.portList.length > 0;
+  const ports = hasPortData ? sw.portList : [];
+  const up = ports.filter(p => p.status === 'up').length;
+  const down = ports.filter(p => p.status === 'down').length;
+  
+  document.getElementById('portSectionTitle').childNodes.length > 1 && document.getElementById('portSectionTitle').childNodes[1].remove();
+  document.getElementById('portSectionTitle').innerHTML = hasPortData
+    ? `🔌 Port Status <span style="font-size:0.7rem;font-weight:400;color:#64748b;margin-left:6px">${ports.length} total</span>`
+    : '🔌 Port Status';
+  
+  document.getElementById('portSummaryBadge').textContent = hasPortData
+    ? `${up} up / ${down} down`
+    : 'No data yet';
+  
+  if (!hasPortData) {
+    document.getElementById('portGrid').innerHTML = 
+      '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#475569;font-size:0.78rem">No port data available yet — wait for telemetry or click Refresh</div>';
+    return;
+  }
+
+  window._portData = ports;
+  
+  const formatBytes = b => b > 1048576 ? (b/1048576).toFixed(1)+'MB' : b > 1024 ? (b/1024).toFixed(1)+'KB' : b+'B';
+  document.getElementById('portGrid').innerHTML = ports.map(p => {
+    const isUp = p.status === 'up';
+    return `<div class="port-tile ${isUp?'up':'down'}" data-port-idx="${p.index}">
+      <div class="port-led ${isUp?'up':'down'}"></div>
+      <div class="pidx">${p.index || '?'}</div>
+      <div class="pname">${(p.name||'Port').substring(0,18)}</div>
+      <div class="pstatus">${isUp ? '● UP' : '○ DOWN'}</div>
+      ${p.inBytes !== undefined ? `<div class="ptraffic">↓ ${formatBytes(p.inBytes||0)}</div>` : ''}
+      ${p.outBytes !== undefined ? `<div class="ptraffic">↑ ${formatBytes(p.outBytes||0)}</div>` : ''}
+    </div>`;
+  }).join('');
+  
+  document.getElementById('portGrid').onclick = function(e) {
+    const tile = e.target.closest('.port-tile');
+    if (!tile) return;
+    const idx = tile.dataset.portIdx;
+    const port = (window._portData || []).find(p => String(p.index) === idx);
+    if (port) showPortModal(port, switches[selectedId]);
+  };
+}
+
+function togglePortSection() {
+  const grid = document.getElementById('portGrid');
+  const arrow = document.getElementById('portToggleArrow');
+  const isHidden = grid.style.display === 'none';
+  grid.style.display = isHidden ? 'grid' : 'none';
+  arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+// ─── Quick Command (sends via API + shows in console) ─────────
+function quickCmd(cmd) {
+  document.getElementById('cmdInput').value = cmd;
+  sendCommand();
+}
+
+// ─── Console ──────────────────────────────────────────────────
+async function sendCommand() {
+  const input = document.getElementById('cmdInput');
+  const cmd = input.value.trim();
+  if (!cmd || !selectedId) return;
+  input.value = '';
+  
+  const history = document.getElementById('consoleHistory');
+  
+  // Add command entry
+  addConsoleEntry('$ ' + cmd, 'cmd');
+  
+  try {
+    const res = await fetch(API + '/switches/' + selectedId + '/cmd', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd})
+    });
+    await res.json();
+    addConsoleEntry('⏳ Executing...', '');
+    
+    // Poll for response
+    let attempts = 0;
+    const prevResp = switches[selectedId]?.lastResponse || '';
+    const check = setInterval(async () => {
+      attempts++;
+      try {
+        const r = await fetch(API + '/switches/' + selectedId);
+        const d = await r.json();
+        if (d.lastResponse && d.lastResponse !== prevResp) {
+          addConsoleEntry(d.lastResponse.substring(0, 3000), 'resp');
+          clearInterval(check);
+          switches[selectedId] = d;
+        } else if (attempts > 12) {
+          addConsoleEntry('⌛ No response (timeout after 24s)', 'err');
+          clearInterval(check);
+        }
+      } catch(e) {
+        addConsoleEntry('✗ Error: ' + e.message, 'err');
+        clearInterval(check);
+      }
+    }, 2000);
+  } catch(e) {
+    addConsoleEntry('✗ ' + e.message, 'err');
+  }
+  
+  // Scroll to bottom
+  setTimeout(() => history.scrollTop = history.scrollHeight, 100);
+}
+
+function addConsoleEntry(text, type) {
+  const history = document.getElementById('consoleHistory');
+  const empty = history.querySelector('.console-empty');
+  if (empty) empty.remove();
+  
+  const time = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'console-entry' + (type ? ' ' + type : '');
+  div.innerHTML = `<span class="time">${time}</span><span class="text">${escapeHtml(text)}</span>`;
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+  
+  consoleHistory.push({time, text, type});
+  document.getElementById('consoleTabCount').textContent = consoleHistory.length + ' cmds';
+}
+
+function clearConsole() {
+  document.getElementById('consoleHistory').innerHTML = 
+    '<div class="console-empty">⌨️ Type a command above and press Enter</div>';
+  consoleHistory = [];
+  document.getElementById('consoleTabCount').textContent = '0';
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Terminal ───────────────────────────────────────────────
+// Full interactive terminal: type directly, auto-scroll, history, clear
+
+let termHistory = [];
+let termHistoryIdx = -1;
+let termBuffer = '';
+let termLines = 0;
+
+function termFocus() {
+  setTimeout(() => document.getElementById('termHiddenInput').focus(), 50);
+}
+
+function termPrompt(sw) {
+  const name = sw?.name || sw?.ip || selectedId || 'switch';
+  const short = name.replace(/[ _-]/g, '').substring(0, 12).toLowerCase();
+  document.getElementById('termTitle').textContent = 'admin@' + short + ' ~ $';
+  document.getElementById('termDeviceName').textContent = name;
+}
+
+function termWriteln(text, cls = '') {
+  const body = document.getElementById('termBody');
+  const div = document.createElement('div');
+  div.className = 'term-line' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  body.appendChild(div);
+  termLines++;
+  document.getElementById('termLineCount').textContent = termLines;
+  body.scrollTop = body.scrollHeight;
+}
+
+function termWriteInput() {
+  const body = document.getElementById('termBody');
+  // Remove existing input line
+  const existing = body.querySelector('.term-input-line');
+  if (existing) existing.remove();
+  
+  const name = switches[selectedId]?.name || selectedId || 'switch';
+  const short = name.replace(/[ _-]/g, '').substring(0, 12).toLowerCase();
+  const prompt = 'admin@' + short + '#';
+  
+  const line = document.createElement('div');
+  line.className = 'term-input-line';
+  line.innerHTML = '<span class="prompt">' + prompt + ' </span>' + escapeHtml(termBuffer) + '<span class="term-cursor"></span>';
+  body.appendChild(line);
+  body.scrollTop = body.scrollHeight;
+}
+
+function termClear() {
+  const body = document.getElementById('termBody');
+  body.innerHTML = '';
+  termLines = 0;
+  document.getElementById('termLineCount').textContent = '0';
+  termWriteInput();
+}
+
+function termExec(cmd) {
+  if (!selectedId) return;
+  
+  // Handle local commands
+  if (cmd === 'clear' || cmd === 'cls') {
+    termClear();
+    return;
+  }
+  if (cmd === 'help') {
+    termWriteln('Available commands:', 'info');
+    termWriteln('  show version       - System version info', 'info');
+    termWriteln('  show running-config - Full configuration', 'info');
+    termWriteln('  show interface     - Interface status', 'info');
+    termWriteln('  show vlan          - VLAN information', 'info');
+    termWriteln('  show mac address-table - MAC table', 'info');
+    termWriteln('  show ip route      - Routing table', 'info');
+    termWriteln('  show cpu           - CPU utilization', 'info');
+    termWriteln('  reboot             - Restart switch', 'info');
+    termWriteln('  clear              - Clear screen', 'info');
+    termWriteln('  help               - This help', 'info');
+    return;
+  }
+  
+  // Send via API
+  termWriteln(cmd, '');
+  
+  fetch(API + '/switches/' + selectedId + '/cmd', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({cmd})
+  }).then(r => r.json()).then(() => {
+    const prevResp = switches[selectedId]?.lastResponse || '';
+    let attempts = 0;
+    const check = setInterval(() => {
+      attempts++;
+      fetch(API + '/switches/' + selectedId).then(r => r.json()).then(d => {
+        if (d.lastResponse && d.lastResponse !== prevResp) {
+          // Output response line by line
+          const lines = (d.lastResponse || '').split('\n');
+          for (const l of lines) {
+            if (l.trim()) termWriteln(l, 'output');
+          }
+          switches[selectedId] = d;
+          clearInterval(check);
+          termBuffer = '';
+          termWriteInput();
+        } else if (attempts > 15) {
+          termWriteln('⌛ Command timed out', 'error');
+          clearInterval(check);
+          termBuffer = '';
+          termWriteInput();
+        }
+      });
+    }, 2000);
+  });
+}
+
+// Handle terminal keyboard input
+document.addEventListener('DOMContentLoaded', () => {
+  const hidden = document.getElementById('termHiddenInput');
+  
+  document.getElementById('termBody').addEventListener('click', () => hidden.focus());
+  
+  hidden.addEventListener('keydown', (e) => {
+    if (document.getElementById('tab-terminal').style.display !== 'block' &&
+        !document.getElementById('tab-terminal').classList.contains('active')) return;
+    
+    if (e.key === 'Enter') {
+      const cmd = termBuffer.trim();
+      if (cmd) {
+        termHistory.push(cmd);
+        termHistoryIdx = termHistory.length;
+        // Remove input line before executing
+        const body = document.getElementById('termBody');
+        const existing = body.querySelector('.term-input-line');
+        if (existing) existing.remove();
+        termExec(cmd);
+      }
+    } else if (e.key === 'Backspace') {
+      termBuffer = termBuffer.slice(0, -1);
+      termWriteInput();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (termHistory.length > 0 && termHistoryIdx > 0) {
+        termHistoryIdx--;
+        termBuffer = termHistory[termHistoryIdx];
+        termWriteInput();
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (termHistoryIdx < termHistory.length - 1) {
+        termHistoryIdx++;
+        termBuffer = termHistory[termHistoryIdx];
+      } else {
+        termHistoryIdx = termHistory.length;
+        termBuffer = '';
+      }
+      termWriteInput();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      // Simple tab complete for common commands
+      const prefixes = ['show version', 'show running-config', 'show interface', 'show vlan', 
+                        'show mac address-table', 'show ip route', 'show cpu', 'show logging',
+                        'show system', 'show snmp', 'show vlan brief'];
+      if (termBuffer.trim()) {
+        const match = prefixes.find(p => p.startsWith(termBuffer.trim()));
+        if (match) termBuffer = match + ' ';
+      }
+      termWriteInput();
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      termBuffer += e.key;
+      termWriteInput();
+    } else if (e.key === 'u' && e.ctrlKey) {
+      // Ctrl+U clears line
+      termBuffer = '';
+      termWriteInput();
+    }
+  });
+});
+
+// Focus terminal when switching to it
+const origSwitchTab = switchTab;
+switchTab = function(name) {
+  origSwitchTab(name);
+  if (name === 'terminal') {
+    setTimeout(() => {
+      termFocus();
+      termPrompt(switches[selectedId]);
+      if (document.getElementById('termBody').querySelector('.term-input-line') === null) {
+        termWriteInput();
+      }
+    }, 100);
+  }
+};
+
+// ─── Tab Switching ────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────
+function formatUptime(ticks) {
+  // SNMP timeticks in hundredths of seconds
+  const sec = Math.floor(ticks / 100);
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return d + 'd ' + h + 'h';
+  if (h > 0) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
+
+function updateHeader() {
+  const ids = Object.keys(switches);
+  const online = ids.filter(id => switches[id].status === 'online').length;
+  document.getElementById('onlineCount').textContent = online + ' online';
+  document.getElementById('totalCount').textContent = ids.length + ' switches';
+  
+  // Show aggregate CPU for header badge
+  const onlineSw = ids.filter(id => switches[id].status === 'online');
+  const cpus = onlineSw.map(id => switches[id].cpu).filter(c => c !== null && c !== undefined);
+  if (cpus.length > 0) {
+    const avg = Math.round(cpus.reduce((a,b) => a+b, 0) / cpus.length);
+    document.getElementById('cpuBadge').textContent = 'CPU ' + avg + '%';
+  }
+}
+
+function refreshAll() {
+  fetchSwitches();
+}
+
+// ─── Init ─────────────────────────────────────────────────────
+fetchSwitches();
+pollInterval = setInterval(async () => {
+  await fetchSwitches();
+  if (selectedId && switches[selectedId]) renderDevice(selectedId);
+}, 120000);
+<!-- ─── Port Detail Modal ──────────────────────────────── -->
+<div class="modal-overlay" id="portModal" onclick="if(event.target===this)closePortModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePortModal()">✕</button>
+    <div class="modal-title" id="portModalTitle">🔌 Port Details</div>
+    <div class="modal-info-grid" id="portModalInfo"></div>
+    <div class="modal-macs">
+      <div class="m-label">📇 MAC Addresses Learned on This Port</div>
+      <div id="portModalMacs"><div class="modal-mac-empty">Loading...</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="primary" onclick="fetchPortDetailCmd('show interface','Port')">📋 Show Interface</button>
+      <button onclick="fetchPortDetailCmd('show mac address-table interface','Port')">📇 Show MAC</button>
+      <button onclick="fetchPortDetailCmd('show interface counters','Port')">📊 Counters</button>
+      <button onclick="closePortModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Port Detail Modal ─────────────────────────────────────
+let currentPortName = '';
+let currentPortIdx = '';
+
+function showPortModal(port, sw) {
+  const modal = document.getElementById('portModal');
+  const isUp = port.status === 'up';
+  currentPortName = port.name || ('Port ' + port.index);
+  currentPortIdx = port.index;
+  
+  document.getElementById('portModalTitle').innerHTML = `🔌 <span style="color:${isUp?'#22c55e':'#ef4444'}">●</span> ${port.name || 'Port ' + port.index}`;
+  
+  const formatBytes = b => b > 1048576 ? (b/1048576).toFixed(2)+' MB' : b > 1024 ? (b/1024).toFixed(1)+' KB' : b+' B';
+  
+  document.getElementById('portModalInfo').innerHTML = `
+    <div class="modal-info-item"><div class="m-label">Status</div><div class="m-value" style="color:${isUp?'#22c55e':'#ef4444'}">${isUp ? '🟢 UP' : '🔴 DOWN'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Port Index</div><div class="m-value">${port.index || '?'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Traffic (In)</div><div class="m-value" style="color:#60a5fa">${port.inBytes !== undefined ? '↓ ' + formatBytes(port.inBytes) : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Traffic (Out)</div><div class="m-value" style="color:#a78bfa">${port.outBytes !== undefined ? '↑ ' + formatBytes(port.outBytes) : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Speed</div><div class="m-value">${port.speed ? (port.speed > 1000000000 ? (port.speed/1000000000).toFixed(0)+' Gbps' : (port.speed/1000000).toFixed(0)+' Mbps') : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">Duplex</div><div class="m-value" style="color:${port.duplex && port.duplex !== 'unknown' ? '#22c55e' : '#64748b'}">${port.duplex && port.duplex !== 'unknown' ? 'Full Duplex' : '—'}</div></div>
+    <div class="modal-info-item"><div class="m-label">MAC Address</div><div class="m-value" style="font-size:0.75rem;color:#94a3b8">${port.mac || (sw.mac || '—')}</div></div>
+    <div class="modal-info-item"><div class="m-label">Errors (In)</div><div class="m-value" style="color:${port.inErrors > 0 ? '#f59e0b' : '#22c55e'}">${port.inErrors !== undefined ? port.inErrors : '—'}</div></div>
+  `;
+  
+  // Try to fetch MAC table for this port
+  document.getElementById('portModalMacs').innerHTML = '<div class="modal-loading">⌛ Loading MAC addresses...</div>';
+  fetchPortMacTable(currentPortName);
+  
+  modal.classList.add('open');
+}
+
+function closePortModal() {
+  document.getElementById('portModal').classList.remove('open');
+}
+
+async function fetchPortMacTable(portName) {
+  if (!selectedId) return;
+  try {
+    const cmd = 'show mac address-table interface ' + portName;
+    const res = await fetch(API + '/switches/' + selectedId + '/cmd', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd})
+    });
+    await res.json();
+    
+    let attempts = 0;
+    const prev = switches[selectedId]?.lastResponse || '';
+    const check = setInterval(() => {
+      attempts++;
+      fetch(API + '/switches/' + selectedId).then(r => r.json()).then(d => {
+        if (d.lastResponse && d.lastResponse !== prev) {
+          clearInterval(check);
+          const lines = (d.lastResponse || '').split('\n');
+          // Parse MAC addresses from response
+          const macs = [];
+          for (const l of lines) {
+            const m = l.match(/([0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}|[0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2})/);
+            if (m) {
+              const parts = l.trim().split(/\s+/);
+              macs.push({mac: m[1], vlan: parts[0] || '?', type: parts[parts.length-1] || 'dynamic'});
+            }
+          }
+          if (macs.length > 0) {
+            document.getElementById('portModalMacs').innerHTML = macs.map(m => 
+              `<div class="modal-mac-row"><span style="color:#60a5fa;font-weight:600">${m.mac}</span>  <span style="color:#475569">VLAN ${m.vlan}</span>  <span style="color:#64748b;font-style:italic">${m.type}</span></div>`
+            ).join('');
+          } else {
+            document.getElementById('portModalMacs').innerHTML = 
+              `<div class="modal-mac-row">` + lines.slice(1, -1).filter(l => l.trim()).join('\n') || '<div class="modal-mac-empty">No MAC addresses learned on this port</div>' + '</div>';
+          }
+          switches[selectedId] = d;
+        } else if (attempts > 10) {
+          clearInterval(check);
+          document.getElementById('portModalMacs').innerHTML = '<div class="modal-mac-empty">Timeout — MAC table not available</div>';
+        }
+      }).catch(() => {
+        clearInterval(check);
+        document.getElementById('portModalMacs').innerHTML = '<div class="modal-mac-empty">Error fetching MAC data</div>';
+      });
+    }, 2000);
+  } catch(e) {
+    document.getElementById('portModalMacs').innerHTML = '<div class="modal-mac-empty">Error: ' + e.message + '</div>';
+  }
+}
+
+async function fetchPortDetailCmd(baseCmd, keyword) {
+  if (!currentPortName || !selectedId) return;
+  const cmd = baseCmd + ' ' + currentPortName;
+  document.getElementById('portModalMacs').innerHTML = '<div class="modal-loading">⌛ Executing: ' + cmd + '</div>';
+  
+  try {
+    const res = await fetch(API + '/switches/' + selectedId + '/cmd', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd})
+    });
+    await res.json();
+    
+    let attempts = 0;
+    const prev = switches[selectedId]?.lastResponse || '';
+    const check = setInterval(() => {
+      attempts++;
+      fetch(API + '/switches/' + selectedId).then(r => r.json()).then(d => {
+        if (d.lastResponse && d.lastResponse !== prev) {
+          clearInterval(check);
+          const lines = (d.lastResponse || '').split('\n');
+          document.getElementById('portModalMacs').innerHTML = lines.map(l =>
+            `<div class="modal-mac-row">${escapeHtml(l)}</div>`
+          ).join('');
+          switches[selectedId] = d;
+        } else if (attempts > 10) {
+          clearInterval(check);
+          document.getElementById('portModalMacs').innerHTML = '<div class="modal-mac-empty">Timeout — no response</div>';
+        }
+      });
+    }, 2000);
+  } catch(e) {
+    document.getElementById('portModalMacs').innerHTML = '<div class="modal-mac-empty">Error: ' + e.message + '</div>';
+  }
+}
+</script>
+
+</script>
+</body>
+</html>

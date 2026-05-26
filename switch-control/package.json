@@ -1,0 +1,12 @@
+{
+  "name": "switch-control",
+  "version": "1.0.0",
+  "description": "SNMP+Telnet bridge for BDCOM and managed switches → MQTT",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.0.0"
+  }
+}

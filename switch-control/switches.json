@@ -1,0 +1,12 @@
+[
+    {
+        "name": "BDCOM S2500-8T2S (Main)",
+        "ip": "192.168.10.50",
+        "mac": "b8:69:f4:01:ed:a4",
+        "username": "admin",
+        "password": "admin",
+        "community": "nmscloud",
+        "model": "BDCOM S2500-8T2S",
+        "group": "core-switches"
+    }
+]
