@@ -870,6 +870,9 @@ pollInterval = setInterval(async () => {
   await fetchSwitches();
   if (selectedId && switches[selectedId]) renderDevice(selectedId);
 }, 120000);
+</script>
+</div>
+</div>
 <!-- ─── Port Detail Modal ──────────────────────────────── -->
 <div class="modal-overlay" id="portModal" onclick="if(event.target===this)closePortModal()">
   <div class="modal-box">
@@ -1012,6 +1015,5 @@ async function fetchPortDetailCmd(baseCmd, keyword) {
 }
 </script>
 
-</script>
 </body>
 </html>
