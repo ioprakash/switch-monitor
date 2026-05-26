@@ -7,6 +7,8 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "mqtt": "^5.0.0"
+    "mqtt": "^5.0.0",
+    "net-snmp": "^3.26.3",
+    "telnet-client": "^2.2.13"
   }
 }
