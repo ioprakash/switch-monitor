@@ -140,6 +140,7 @@ svg.ga .gf{transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
 .term-outer{display:flex;flex-direction:column;height:100%}
 .term-actions{display:flex;gap:4px;padding:8px 12px;flex-wrap:wrap;flex-shrink:0;background:#060914;border-bottom:1px solid #141a2a;overflow-x:auto}
 .term-actions button{padding:5px 10px;border-radius:5px;border:1px solid #141a2a;background:#0c1020;color:#64748b;font-size:0.62rem;cursor:pointer;transition:all 0.1s;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0}
+.term-actions button:active{transform:scale(0.95);background:#1a2030;border-color:#3b82f6}
 .term-actions button:hover{background:#111628;color:#94a3b8;border-color:#1e2a40}
 .term-actions button.danger:hover{background:#1f0a0a;color:#f87171}
 .term-actions button.done{color:#4ade80}
@@ -344,8 +345,7 @@ var termBuf = '';
 var termHist = [];
 var termHistIdx = -1;
 var termLineCount = 0;
-var cmdHistory = []; // sent commands for history
-var cmdWaiting = false;
+var cmdPollTimer = null; // current polling timer for active command
 
 // Port state
 var portData = [];
@@ -776,6 +776,7 @@ function renderTermActions(){
 function quickCmd(cmd){
   document.getElementById('termInput').value=cmd
   termBuf=cmd
+  toast('▶ Sending: '+cmd,'info')
   sendTermCmd()
 }
 
@@ -826,11 +827,20 @@ function focusTerm(){
 function sendTermCmd(){
   var input=document.getElementById('termInput')
   var cmd=termBuf.trim()
-  if(!cmd||!selectedId||cmdWaiting)return
+  if(!cmd||!selectedId){
+    toast('Select a switch first','error')
+    return
+  }
+  
+  // Cancel any previous polling so buttons always work
+  if(cmdPollTimer){
+    clearInterval(cmdPollTimer)
+    cmdPollTimer=null
+  }
+  
   input.value=''
-  cmdWaiting=true
   termBuf=''
-  document.getElementById('inputStatus').textContent='⏳ ...'
+  document.getElementById('inputStatus').textContent='⏳ sending...'
 
   termHistory.push(cmd)
   termHistIdx=termHistory.length
@@ -839,12 +849,12 @@ function sendTermCmd(){
   sendAPI(selectedId,cmd).then(function(){
     var prev=switches[selectedId]?.lastResponse||''
     var att=0
-    var ch=setInterval(function(){
+    cmdPollTimer=setInterval(function(){
       att++
       fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
         if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(ch)
-          cmdWaiting=false
+          clearInterval(cmdPollTimer)
+          cmdPollTimer=null
           var lines=(d.lastResponse||'').split('\n')
           for(var li=0;li<lines.length;li++){
             if(lines[li].trim()) termWriteln(lines[li],'')
@@ -853,15 +863,20 @@ function sendTermCmd(){
           document.getElementById('inputStatus').textContent=termLineCount+' lines'
           toast('✅ Done','success')
         }else if(att>15){
-          clearInterval(ch);cmdWaiting=false
+          clearInterval(cmdPollTimer)
+          cmdPollTimer=null
           termWriteln('⌛ Command timed out','red')
           document.getElementById('inputStatus').textContent='timeout'
           toast('Command timed out','error')
         }
-      }).catch(function(){clearInterval(ch);cmdWaiting=false;termWriteln('✗ Network error','red');document.getElementById('inputStatus').textContent='error'})
+      }).catch(function(){
+        clearInterval(cmdPollTimer)
+        cmdPollTimer=null
+        termWriteln('✗ Network error','red')
+        document.getElementById('inputStatus').textContent='error'
+      })
     },2000)
   }).catch(function(e){
-    cmdWaiting=false
     termWriteln('✗ '+e.message,'red')
     document.getElementById('inputStatus').textContent='error'
     toast('Failed to send command','error')
