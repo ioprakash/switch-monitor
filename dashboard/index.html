@@ -225,7 +225,7 @@ svg.ga .gf{transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
   <div class="sidebar">
     <div class="sidebar-header">
       <span class="logo">⚡ Switch Monitor</span>
-      <span class="badge-v">v3</span>
+      <span class="badge-v">v3.3</span>
     </div>
     <div class="sidebar-search">
       <input type="text" placeholder="🔍 Search switches..." id="searchInput" oninput="doFilter(this.value)">
@@ -359,7 +359,7 @@ window.onerror = function(msg, url, line, col, err) {
 
 // Terminal state
 var termBuf = '';
-var termHist = [];
+var termHistory = [];
 var termHistIdx = -1;
 var termLineCount = 0;
 var cmdPollTimer = null; // current polling timer for active command
