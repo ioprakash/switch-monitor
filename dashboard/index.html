@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Switch Monitor — Network Command Center</title>
 <style>
@@ -339,6 +342,20 @@ var API = window.location.origin + '/api';
 var switches = {};
 var selectedId = null;
 var pollTimer = null;
+
+// Global error handler - surfaces JS errors as toasts
+window.onerror = function(msg, url, line, col, err) {
+  var el = document.getElementById('toastBox')
+  if(el) {
+    var t = document.createElement('div')
+    t.className = 'tx error'
+    t.textContent = '⚡ JS Error: ' + msg + ' (line ' + line + ')'
+    el.appendChild(t)
+    setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t)},8000)
+  }
+  console.error(msg, url, line, col, err)
+  return true
+}
 
 // Terminal state
 var termBuf = '';
@@ -825,6 +842,7 @@ function focusTerm(){
 // ═══════════════════════════════════════════════════════════════
 
 function sendTermCmd(){
+  try{
   var input=document.getElementById('termInput')
   var cmd=termBuf.trim()
   if(!cmd||!selectedId){
@@ -848,11 +866,13 @@ function sendTermCmd(){
 
   sendAPI(selectedId,cmd).then(function(){
     var prev=switches[selectedId]?.lastResponse||''
+    var prevCmdTime=switches[selectedId]?.lastCmdTime||''
     var att=0
     cmdPollTimer=setInterval(function(){
       att++
       fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
-        if(d.lastResponse&&d.lastResponse!==prev){
+        // Check if lastCmdTime changed - means a new response came in
+        if(d.lastCmdTime && d.lastCmdTime !== prevCmdTime && d.lastResponse){
           clearInterval(cmdPollTimer)
           cmdPollTimer=null
           var lines=(d.lastResponse||'').split('\n')
@@ -879,8 +899,9 @@ function sendTermCmd(){
   }).catch(function(e){
     termWriteln('✗ '+e.message,'red')
     document.getElementById('inputStatus').textContent='error'
-    toast('Failed to send command','error')
+    toast('Failed to send command: '+e.message,'error')
   })
+  }catch(e){toast('JS Error: '+e.message,'error')}
 }
 
 function termHelp(){
@@ -995,6 +1016,7 @@ function termCmd(cmd){
 // ═══════════════════════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded',function(){
+  console.log('Switch Monitor v3.2 loaded - '+new Date().toISOString())
   showBanner()
   initTerm()
   fetchAll()
