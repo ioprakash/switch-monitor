@@ -364,6 +364,69 @@ var termHistIdx = -1;
 var termLineCount = 0;
 var cmdPollTimer = null; // current polling timer for active command
 
+// WebSocket for real-time push
+var ws = null;
+var wsConnecting = false;
+var wsReconnectTimer = null;
+
+function wsConnect(){
+  if(wsConnecting || (ws && ws.readyState === 1)) return
+  wsConnecting = true
+  var proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  var url = proto + '//' + window.location.host + '/ws'
+  ws = new WebSocket(url)
+  ws.onopen = function(){
+    wsConnecting = false
+    console.log('WebSocket connected')
+    if(wsReconnectTimer){clearTimeout(wsReconnectTimer);wsReconnectTimer=null}
+  }
+  ws.onmessage = function(e){
+    try{
+      var msg = JSON.parse(e.data)
+      if(msg.type === 'init'){
+        for(var i=0;i<msg.data.length;i++) switches[msg.data[i].id]=msg.data[i]
+        renderSidebar()
+        if(!selectedId && msg.data.length>0) selectSw(msg.data[0].id)
+        else if(selectedId && switches[selectedId]) renderDevice(selectedId)
+      }else if(msg.type === 'telemetry'){
+        if(msg.data) switches[msg.data.id] = msg.data
+        if(msg.deviceId === selectedId && switches[selectedId]) renderDevice(selectedId)
+      }else if(msg.type === 'response'){
+        // Cancel any ongoing polling
+        if(cmdPollTimer){
+          clearInterval(cmdPollTimer)
+          cmdPollTimer=null
+        }
+        // Write response to terminal
+        if(msg.response && msg.deviceId === selectedId){
+          var lines = msg.response.split('\n')
+          for(var li=0;li<lines.length;li++){
+            if(lines[li].trim()) termWriteln(lines[li],'')
+          }
+          switches[msg.deviceId].lastResponse = msg.response
+          switches[msg.deviceId].lastCmdTime = msg.cmdTime
+          document.getElementById('inputStatus').textContent=termLineCount+' lines'
+          toast('✅ Response received','success')
+        }
+      }else if(msg.type === 'status'){
+        if(switches[msg.deviceId]) switches[msg.deviceId].status = msg.status
+        if(msg.deviceId === selectedId) renderDevice(selectedId)
+        renderSidebar()
+      }
+    }catch(err){console.error('WS parse error',err)}
+  }
+  ws.onclose = function(){
+    wsConnecting = false
+    ws = null
+    setTimeout(wsConnect, 3000)
+  }
+  ws.onerror = function(){
+    wsConnecting = false
+    if(ws){ws.close();ws=null}
+    setTimeout(wsConnect, 5000)
+  }
+}
+
 // Port state
 var portData = [];
 var curPortName = '';
@@ -865,37 +928,64 @@ function sendTermCmd(){
   termWriteln(cmd,'green')
 
   sendAPI(selectedId,cmd).then(function(){
-    var prev=switches[selectedId]?.lastResponse||''
-    var prevCmdTime=switches[selectedId]?.lastCmdTime||''
-    var att=0
-    cmdPollTimer=setInterval(function(){
-      att++
-      fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
-        // Check if lastCmdTime changed - means a new response came in
-        if(d.lastCmdTime && d.lastCmdTime !== prevCmdTime && d.lastResponse){
-          clearInterval(cmdPollTimer)
-          cmdPollTimer=null
-          var lines=(d.lastResponse||'').split('\n')
-          for(var li=0;li<lines.length;li++){
-            if(lines[li].trim()) termWriteln(lines[li],'')
+    // Try WebSocket first (expect push from WS within 12s)
+    var wsTimeout = setTimeout(function(){
+      // WS didn't deliver - fall back to polling
+      if(cmdPollTimer) return // polling already started
+      var prevCmdTime=switches[selectedId]?.lastCmdTime||''
+      var att=0
+      cmdPollTimer=setInterval(function(){
+        att++
+        fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
+          if(d.lastCmdTime && d.lastCmdTime !== prevCmdTime && d.lastResponse){
+            clearInterval(cmdPollTimer)
+            cmdPollTimer=null
+            var lines=(d.lastResponse||'').split('\n')
+            for(var li=0;li<lines.length;li++){
+              if(lines[li].trim()) termWriteln(lines[li],'')
+            }
+            switches[selectedId]=d
+            document.getElementById('inputStatus').textContent=termLineCount+' lines'
+            toast('✅ Done','success')
+          }else if(att>10){
+            clearInterval(cmdPollTimer)
+            cmdPollTimer=null
+            termWriteln('⌛ Command timed out','red')
+            document.getElementById('inputStatus').textContent='timeout'
+            toast('Command timed out','error')
           }
-          switches[selectedId]=d
-          document.getElementById('inputStatus').textContent=termLineCount+' lines'
-          toast('✅ Done','success')
-        }else if(att>15){
+        }).catch(function(){
           clearInterval(cmdPollTimer)
           cmdPollTimer=null
-          termWriteln('⌛ Command timed out','red')
-          document.getElementById('inputStatus').textContent='timeout'
-          toast('Command timed out','error')
+          termWriteln('✗ Network error','red')
+          document.getElementById('inputStatus').textContent='error'
+        })
+      },2000)
+    },12000)
+    
+    // Set up WS response listener to cancel polling
+    var _origOnMsg = ws ? ws.onmessage : null
+    var wsHandler = function(e){
+      try{
+        var msg = JSON.parse(e.data)
+        if(msg.type === 'response' && msg.deviceId === selectedId){
+          clearTimeout(wsTimeout)
+          if(cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null}
+          if(msg.response){
+            var lines = msg.response.split('\n')
+            for(var li=0;li<lines.length;li++){
+              if(lines[li].trim()) termWriteln(lines[li],'')
+            }
+            switches[selectedId].lastResponse = msg.response
+            switches[selectedId].lastCmdTime = msg.cmdTime
+            document.getElementById('inputStatus').textContent=termLineCount+' lines'
+            toast('✅ Response received','success')
+          }
         }
-      }).catch(function(){
-        clearInterval(cmdPollTimer)
-        cmdPollTimer=null
-        termWriteln('✗ Network error','red')
-        document.getElementById('inputStatus').textContent='error'
-      })
-    },2000)
+      }catch(err){}
+      if(_origOnMsg && _origOnMsg !== wsHandler) _origOnMsg(e)
+    }
+    if(ws) ws.onmessage = wsHandler
   }).catch(function(e){
     termWriteln('✗ '+e.message,'red')
     document.getElementById('inputStatus').textContent='error'
@@ -1016,9 +1106,10 @@ function termCmd(cmd){
 // ═══════════════════════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded',function(){
-  console.log('Switch Monitor v3.2 loaded - '+new Date().toISOString())
+  console.log('Switch Monitor v3.3 loaded - '+new Date().toISOString())
   showBanner()
   initTerm()
+  wsConnect()
   fetchAll()
   setInterval(function(){
     fetchAll()

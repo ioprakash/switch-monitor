@@ -1,6 +1,8 @@
 const express = require('express');
 const mqtt = require('mqtt');
 const cors = require('cors');
+const http = require('http');
+const { WebSocketServer } = require('ws');
 
 const MQTT_BROKER = process.env.MQTT_BROKER || 'tcp://192.168.10.10:1883';
 const PORT = process.env.PORT || 3002;
@@ -11,6 +13,16 @@ app.use(express.json());
 
 // ─── In-Memory Store ──────────────────────────────────────────
 const devices = {};
+
+// ─── WebSocket Broadcast ──────────────────────────────────────
+let wsClients = new Set();
+
+function wsBroadcast(data) {
+    const msg = JSON.stringify(data);
+    for (const ws of wsClients) {
+        if (ws.readyState === 1) ws.send(msg);
+    }
+}
 
 // ─── MQTT Client ──────────────────────────────────────────────
 const client = mqtt.connect(MQTT_BROKER);
@@ -61,6 +73,7 @@ client.on('message', (topic, message) => {
             }
             if (data.portList) d.portList = data.portList;
         } catch {}
+        wsBroadcast({ type: 'telemetry', deviceId, data: d });
         return;
     }
 
@@ -68,6 +81,7 @@ client.on('message', (topic, message) => {
         const s = payload.trim().toLowerCase();
         if (s.includes('online') || s === 'online') d.status = 'online';
         else if (s.includes('offline') || s === 'offline') d.status = 'offline';
+        wsBroadcast({ type: 'status', deviceId, status: d.status });
     }
 
     if (type === 'response') {
@@ -84,6 +98,8 @@ client.on('message', (topic, message) => {
             const serialMatch = payload.match(/Serial num:(\S+)/i);
             if (serialMatch) d.serial = serialMatch[1];
         }
+        // Broadcast command response to WebSocket clients
+        wsBroadcast({ type: 'response', deviceId, cmdTime: d.lastCmdTime, response: d.lastResponse });
     }
 });
 
@@ -110,8 +126,22 @@ app.post('/api/switches/:id/cmd', (req, res) => {
     res.json({ success: true, message: `Command sent to ${id}` });
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', switches: Object.keys(devices).length }));
+app.get('/health', (req, res) => res.json({ status: 'ok', wsClients: wsClients.size, switches: Object.keys(devices).length }));
 
-app.listen(PORT, () => {
-    console.log(`[backend] Switch Monitor API running on port ${PORT}`);
+// ─── HTTP + WebSocket Server ──────────────────────────────────
+const server = http.createServer(app);
+
+const wss = new WebSocketServer({ server });
+wss.on('connection', (ws, req) => {
+    wsClients.add(ws);
+    // Send full switch list on connect
+    const list = Object.values(devices).filter(d => d.id.startsWith('SW_'));
+    ws.send(JSON.stringify({ type: 'init', data: list }));
+    
+    ws.on('close', () => wsClients.delete(ws));
+    ws.on('error', () => wsClients.delete(ws));
+});
+
+server.listen(PORT, () => {
+    console.log(`[backend] Switch Monitor API + WebSocket running on port ${PORT}`);
 });
