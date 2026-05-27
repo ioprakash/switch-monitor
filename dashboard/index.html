@@ -5,35 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Switch Monitor — Network Command Center</title>
 <style>
-/* ─── Reset & Base ──────────────────────────── */
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif}
 body{background:#070a14;color:#e2e8f0;min-height:100vh;overflow:hidden}
-a{color:#60a5fa;text-decoration:none}
 ::selection{background:#3b82f644;color:#e2e8f0}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:#334155}
 
-/* ─── Animations ────────────────────────────── */
 @keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes glow{0%,100%{box-shadow:0 0 4px #3b82f644}50%{box-shadow:0 0 12px #3b82f688}}
-@keyframes spin{to{transform:rotate(360deg)}}
 @keyframes trafficPulse{0%{opacity:0.4}50%{opacity:1}100%{opacity:0.4}}
-.fade-in{animation:fadeIn 0.3s ease}
-.slide-in{animation:slideIn 0.3s ease}
 
-/* ─── App Shell ─────────────────────────────── */
 .app-shell{display:flex;height:100vh}
 
-/* ─── Sidebar ───────────────────────────────── */
-.sidebar{width:290px;min-width:290px;background:#080b16;border-right:1px solid #141a2a;display:flex;flex-direction:column;position:relative}
+/* Sidebar */
+.sidebar{width:280px;min-width:280px;background:#080b16;border-right:1px solid #141a2a;display:flex;flex-direction:column}
 .sidebar-header{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #141a2a}
-.sidebar-header .logo{font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#3b82f6,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
-.sidebar-header .logo-sub{font-size:0.6rem;color:#475569;font-weight:500;padding:2px 8px;border-radius:10px;background:#0f1420;border:1px solid #1a2030}
+.sidebar-header .logo{font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#3b82f6,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
+.sidebar-header .badge-v{font-size:0.55rem;color:#475569;padding:2px 7px;border-radius:8px;background:#0f1420;border:1px solid #1a2030}
 .sidebar-search{padding:10px 12px;border-bottom:1px solid #141a2a}
 .sidebar-search input{width:100%;padding:8px 12px;background:#060914;border:1px solid #181f30;border-radius:8px;color:#e2e8f0;font-size:0.78rem;outline:none;transition:all 0.15s}
 .sidebar-search input::placeholder{color:#3b4252}
@@ -41,343 +33,264 @@ a{color:#60a5fa;text-decoration:none}
 .sidebar-list{flex:1;overflow-y:auto;padding:8px}
 .sidebar-footer{padding:10px 14px;border-top:1px solid #141a2a;font-size:0.6rem;color:#2d3448;display:flex;justify-content:space-between}
 
-/* Switch cards in sidebar */
-.sw-card{padding:12px;margin-bottom:5px;border-radius:10px;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:#0c1020;animation:fadeIn 0.25s ease}
+.sw-card{padding:12px;margin-bottom:5px;border-radius:10px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;background:#0c1020}
 .sw-card:hover{border-color:#1e2a40;background:#111628;transform:translateX(3px)}
-.sw-card.active{background:linear-gradient(135deg,#111d33,#0f172a);border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f620,0 4px 16px #00000033}
+.sw-card.active{background:linear-gradient(135deg,#111d33,#0f172a);border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f620}
 .sw-card .top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.sw-card .name{font-size:0.78rem;font-weight:600;color:#e2e8f0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sw-card .ip{font-size:0.6rem;color:#475569;font-family:'JetBrains Mono','Fira Code',monospace}
+.sw-card .name{font-size:0.78rem;font-weight:600;color:#e2e8f0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sw-card .ip{font-size:0.6rem;color:#475569;font-family:monospace}
 .sw-card .stats{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-.sw-card .stat{padding:2px 7px;border-radius:4px;font-size:0.58rem;font-weight:600;background:#0f1420;color:#64748b}
+.sw-card .stat{padding:2px 7px;border-radius:4px;font-size:0.55rem;font-weight:600;background:#0f1420;color:#64748b}
 .sw-card .stat.online{background:#052e1622;color:#4ade80}
 .sw-card .stat.temp{background:#1a120822;color:#fbbf24}
 .sw-card .stat.cpu{background:#1a1f3022;color:#60a5fa}
 
-/* ─── Main Area ─────────────────────────────── */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#070a14}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
-/* ─── Top Bar ────────────────────────────────── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#080b16;border-bottom:1px solid #141a2a;flex-shrink:0}
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#080b16;border-bottom:1px solid #141a2a;flex-shrink:0;flex-wrap:wrap;gap:8px}
 .topbar-left{display:flex;align-items:center;gap:12px}
-.topbar-left h2{font-size:0.95rem;font-weight:700;color:#e2e8f0}
-.topbar-left h2 .device-name{background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.topbar-status{display:flex;align-items:center;gap:4px;font-size:0.65rem;font-weight:500}
+.topbar-left h2{font-size:0.9rem;font-weight:700;color:#e2e8f0}
+.topbar-left h2 .dev{color:#60a5fa}
+.topbar-status{font-size:0.65rem;font-weight:500;display:flex;align-items:center;gap:4px}
 .topbar-status .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
 .topbar-status .dot.up{background:#22c55e;box-shadow:0 0 8px #22c55e66;animation:pulse 2s infinite}
 .topbar-status .dot.down{background:#ef4444}
-.topbar-right{display:flex;align-items:center;gap:8px}
-.topbar-btn{background:transparent;border:1px solid #1a2030;color:#64748b;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.68rem;transition:all 0.15s;display:flex;align-items:center;gap:5px}
+.topbar-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.topbar-btn{padding:5px 11px;border-radius:6px;border:1px solid #1a2030;background:transparent;color:#64748b;cursor:pointer;font-size:0.65rem;transition:all 0.12s;display:inline-flex;align-items:center;gap:4px}
 .topbar-btn:hover{background:#111628;color:#94a3b8;border-color:#3b82f6}
 .topbar-btn.danger:hover{background:#1f0a0a;color:#f87171;border-color:#ef4444}
-.topbar-btn.primary{background:#1e40af22;border-color:#3b82f644;color:#60a5fa}
-.topbar-btn.primary:hover{background:#1e40af44;border-color:#3b82f6}
+.badge-stat{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:0.58rem;font-weight:600}
+.badge-stat.cpu{background:#1e3a5f22;border:1px solid #1e3a5f44;color:#60a5fa}
+.badge-stat.mem{background:#3b1f5f22;border:1px solid #5a2d8a44;color:#c084fc}
+.badge-stat.online{background:#052e1622;border:1px solid #16653444;color:#4ade80}
 
-.badge-online{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:0.6rem;font-weight:600;background:#052e1622;border:1px solid #16653444;color:#4ade80}
-.badge-cpu{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:0.6rem;font-weight:600;background:#1e3a5f22;border:1px solid #1e3a5f44;color:#60a5fa}
-
-/* ─── Tabs ──────────────────────────────────── */
-.tabs{display:flex;background:#060914;border-bottom:1px solid #141a2a;padding:0 16px;flex-shrink:0}
-.tab{padding:10px 18px;cursor:pointer;font-size:0.75rem;font-weight:500;color:#4a5a72;border-bottom:2px solid transparent;transition:all 0.15s;user-select:none;display:flex;align-items:center;gap:6px}
+/* Tabs */
+.tabs{display:flex;background:#060914;border-bottom:1px solid #141a2a;flex-shrink:0}
+.tab{padding:10px 18px;cursor:pointer;font-size:0.75rem;font-weight:500;color:#4a5a72;border-bottom:2px solid transparent;transition:all 0.12s;user-select:none;display:flex;align-items:center;gap:6px}
 .tab:hover{color:#94a3b8;background:#0c102022}
 .tab.active{color:#60a5fa;border-bottom-color:#3b82f6;background:linear-gradient(0deg,#3b82f608,transparent)}
 .tab-icon{font-size:0.85rem}
-.tab-badge{padding:1px 6px;border-radius:8px;background:#0f1420;font-size:0.58rem;color:#475569}
 
-/* ─── Tab Content ────────────────────────────── */
 .tab-content{flex:1;overflow-y:auto;padding:14px;display:none}
 .tab-content.active{display:block;animation:fadeIn 0.2s ease}
 .tab-content.full{display:flex;flex-direction:column;padding:0;overflow:hidden}
 
-/* ─── Empty State ────────────────────────────── */
+/* Empty State */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#3b4252;gap:12px}
 .empty-state .big-icon{font-size:3.5rem;opacity:0.4}
 .empty-state h3{font-size:1rem;font-weight:600;color:#4a5a72}
 .empty-state p{font-size:0.75rem;color:#3b4252;max-width:280px;text-align:center}
 
-/* ─── Status Bar ────────────────────────────── */
-.status-bar{background:linear-gradient(135deg,#0c1020,#111628);border:1px solid #141a2a;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
-.status-bar .item{display:flex;flex-direction:column;gap:2px;min-width:80px}
-.status-bar .label{color:#3b4252;font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
-.status-bar .value{color:#e2e8f0;font-size:0.8rem;font-weight:500;display:flex;align-items:center;gap:6px}
-.status-bar .value .mono{font-family:'JetBrains Mono','Fira Code',monospace;font-size:0.72rem}
-.status-divider{width:1px;height:30px;background:#141a2a;flex-shrink:0}
+/* Status Bar */
+.status-bar{background:linear-gradient(135deg,#0c1020,#111628);border:1px solid #141a2a;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.status-bar .item{display:flex;flex-direction:column;gap:1px}
+.status-bar .label{color:#3b4252;font-size:0.55rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.status-bar .value{color:#e2e8f0;font-size:0.78rem;font-weight:500}
+.status-bar .value .mono{font-family:monospace;font-size:0.7rem}
+.sb-div{width:1px;height:28px;background:#141a2a;flex-shrink:0}
 
-/* ─── Info Cards Grid ───────────────────────── */
-.grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:14px}
-.card{background:linear-gradient(145deg,#0c1020,#111628);border:1px solid #141a2a;border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:all 0.2s;animation:fadeIn 0.3s ease}
-.card:hover{border-color:#1e2a40;transform:translateY(-1px);box-shadow:0 6px 24px #00000033}
-.card .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.card .card-icon{font-size:1.2rem;opacity:0.7}
-.card .card-label{font-size:0.58rem;color:#3b4252;font-weight:600;text-transform:uppercase;letter-spacing:0.8px}
-.card .card-value{font-size:1.6rem;font-weight:700;font-family:'JetBrains Mono','Fira Code',monospace;letter-spacing:-1px;line-height:1.2}
-.card .card-sub{font-size:0.68rem;color:#475569;margin-top:4px}
-.card .card-foot{font-size:0.55rem;color:#2d3448;margin-top:6px}
+/* Info Cards */
+.grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:12px}
+.card{background:linear-gradient(145deg,#0c1020,#111628);border:1px solid #141a2a;border-radius:12px;padding:14px;transition:all 0.15s}
+.card:hover{border-color:#1e2a40;box-shadow:0 4px 20px #00000033}
+.card .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.card .ci{font-size:1.1rem;opacity:0.6}
+.card .cl{font-size:0.55rem;color:#3b4252;font-weight:600;text-transform:uppercase;letter-spacing:0.8px}
+.card .cv{font-size:1.5rem;font-weight:700;font-family:monospace;letter-spacing:-1px;line-height:1.2}
+.card .cs{font-size:0.65rem;color:#475569;margin-top:3px}
+.card .cf{font-size:0.52rem;color:#2d3448;margin-top:5px}
+.bar-tr{height:4px;background:#0f1420;border-radius:4px;overflow:hidden;margin-top:6px}
+.bar-fi{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
+.gw{display:flex;justify-content:center;padding:2px 0}
+svg.ga{width:64px;height:64px;transform:rotate(-90deg)}
+svg.ga circle{fill:none;stroke-width:5;stroke-linecap:round}
+svg.ga .gb{stroke:#0f1420}
+svg.ga .gf{transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
+.gl{text-align:center;font-size:0.55rem;color:#3b4252;margin-top:-4px}
 
-/* Bar inside card */
-.bar-track{height:4px;background:#0f1420;border-radius:4px;overflow:hidden;margin-top:8px}
-.bar-fill{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
+/* Ports */
+.psh{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,#0c1020,#111628);border:1px solid #141a2a;border-radius:10px;cursor:pointer;margin-bottom:10px;transition:all 0.12s;user-select:none}
+.psh:hover{border-color:#1e2a40;background:linear-gradient(135deg,#111628,#151d30)}
+.psh .pl{display:flex;align-items:center;gap:8px}
+.psh .pl span{font-weight:600;font-size:0.8rem;color:#e2e8f0}
+.psh .pr{display:flex;align-items:center;gap:8px}
+.psh .ps{font-size:0.62rem;color:#475569}
+.psh .pt{color:#3b4252;font-size:0.75rem;transition:transform 0.25s ease}
+.psh .pt.open{transform:rotate(180deg)}
 
-/* Gauge ring */
-.gauge-wrap{display:flex;justify-content:center;padding:4px 0}
-svg.gauge{width:70px;height:70px;transform:rotate(-90deg)}
-svg.gauge circle{fill:none;stroke-width:5;stroke-linecap:round}
-svg.gauge .bg{stroke:#0f1420}
-svg.gauge .fg{transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
-.gauge-label{text-align:center;font-size:0.6rem;color:#3b4252;margin-top:-4px}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;margin-bottom:10px}
+.ptile{padding:7px 3px;border-radius:8px;text-align:center;font-size:0.62rem;transition:all 0.12s;cursor:pointer}
+.ptile:hover{transform:translateY(-2px);box-shadow:0 3px 10px #00000044}
+.ptile.up{background:linear-gradient(180deg,#052e16,#063a1a);border:1px solid #16653455;color:#86efac}
+.ptile.up:hover{border-color:#22c55e66}
+.ptile.down{background:linear-gradient(180deg,#1a0808,#240a0a);border:1px solid #3a101055;color:#fca5a5}
+.ptile.down:hover{border-color:#ef444466}
+.ptile .pld{width:4px;height:4px;border-radius:50%;margin:0 auto 3px}
+.ptile .pld.ld-up{background:#22c55e;box-shadow:0 0 4px #22c55e88}
+.ptile .pld.ld-down{background:#ef444433}
+.ptile .pld.pulse{animation:trafficPulse 1.5s infinite}
+.ptile .pid{font-size:0.5rem;opacity:0.4;margin-bottom:1px}
+.ptile .pnm{font-weight:600;font-size:0.58rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptile .pst{font-size:0.52rem;font-weight:600}
+.ptile .ptr{font-size:0.48rem;opacity:0.35;margin-top:1px;font-family:monospace}
 
-/* ─── Port Grid ─────────────────────────────── */
-.port-section-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#0c1020,#111628);border:1px solid #141a2a;border-radius:12px;cursor:pointer;margin-bottom:12px;transition:all 0.15s;user-select:none}
-.port-section-header:hover{border-color:#1e2a40;background:linear-gradient(135deg,#111628,#151d30)}
-.port-section-header .left{display:flex;align-items:center;gap:10px}
-.port-section-header .left span{font-weight:600;font-size:0.82rem;color:#e2e8f0}
-.port-section-header .right{display:flex;align-items:center;gap:10px}
-.port-summary{font-size:0.65rem;color:#475569}
-.port-toggle{color:#3b4252;font-size:0.78rem;transition:transform 0.25s ease}
-.port-toggle.open{transform:rotate(180deg)}
+/* Terminal - Merged Console + SSH */
+.term-outer{display:flex;flex-direction:column;height:100%}
+.term-actions{display:flex;gap:4px;padding:8px 12px;flex-wrap:wrap;flex-shrink:0;background:#060914;border-bottom:1px solid #141a2a;overflow-x:auto}
+.term-actions button{padding:5px 10px;border-radius:5px;border:1px solid #141a2a;background:#0c1020;color:#64748b;font-size:0.62rem;cursor:pointer;transition:all 0.1s;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0}
+.term-actions button:hover{background:#111628;color:#94a3b8;border-color:#1e2a40}
+.term-actions button.danger:hover{background:#1f0a0a;color:#f87171}
+.term-actions button.done{color:#4ade80}
+.term-actions button.done:hover{background:#052e1622;border-color:#16653466}
+.term-actions .act-spacer{width:1px;height:20px;background:#141a2a;margin:0 4px;align-self:center}
 
-.port-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:7px;margin-bottom:12px}
-.port-tile{padding:8px 4px;border-radius:10px;text-align:center;font-size:0.65rem;transition:all 0.15s;cursor:pointer;position:relative}
-.port-tile:hover{transform:translateY(-3px);box-shadow:0 4px 12px #00000044}
-.port-tile.up{background:linear-gradient(180deg,#052e16,#063a1a);border:1px solid #16653466;color:#86efac}
-.port-tile.up:hover{border-color:#22c55e66}
-.port-tile.down{background:linear-gradient(180deg,#1a0808,#240a0a);border:1px solid #3a101066;color:#fca5a5}
-.port-tile.down:hover{border-color:#ef444466}
-.port-tile .p-led{width:5px;height:5px;border-radius:50%;margin:0 auto 3px}
-.port-tile .p-led.up{background:#22c55e;box-shadow:0 0 5px #22c55e88}
-.port-tile .p-led.down{background:#ef444433}
-.port-tile .p-led.active{animation:trafficPulse 1.5s infinite}
-.port-tile .p-idx{font-size:0.55rem;opacity:0.5;margin-bottom:1px}
-.port-tile .p-name{font-weight:600;font-size:0.6rem;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.port-tile .p-status{font-size:0.55rem;font-weight:600}
-.port-tile .p-traffic{font-size:0.5rem;opacity:0.4;font-family:'JetBrains Mono',monospace;margin-top:1px}
+.term-screen{flex:1;min-height:0;background:#050812;padding:8px 12px;font-family:'Courier New','JetBrains Mono',monospace;font-size:0.76rem;line-height:1.5;overflow-y:auto;cursor:text;white-space:pre-wrap;word-break:break-all}
+.term-screen .t-green{color:#22c55e}
+.term-screen .t-blue{color:#60a5fa}
+.term-screen .t-red{color:#ef4444}
+.term-screen .t-yellow{color:#fbbf24}
+.term-screen .t-dim{color:#3b4252}
+.term-screen .t-prompt{color:#f59e0b;font-weight:600}
+.term-screen .banner{color:#4ade80;white-space:pre;font-size:0.68rem}
+.term-line{margin:0;padding:0}
 
-/* ─── Console Tab ───────────────────────────── */
-.console-wrap{display:flex;flex-direction:column;height:100%;padding:14px;gap:10px}
-.console-actions{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
-.console-actions button{padding:6px 14px;border-radius:6px;border:1px solid #141a2a;background:#0c1020;color:#64748b;font-size:0.68rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:4px}
-.console-actions button:hover{background:#111628;color:#94a3b8;border-color:#1e2a40}
-.console-actions button.cmd-send{background:#1e40af22;border-color:#3b82f644;color:#60a5fa}
-.console-actions button.cmd-send:hover{background:#1e40af44}
-.console-actions button.danger:hover{background:#1f0a0a;color:#f87171}
-.console-history{flex:1;min-height:0;background:#060914;border:1px solid #141a2a;border-radius:10px;padding:10px;overflow-y:auto;font-family:'JetBrains Mono','Fira Code',monospace;font-size:0.72rem;line-height:1.7}
-.console-entry{padding:2px 4px;border-bottom:1px solid #0a0e1c;animation:fadeIn 0.15s ease}
-.console-entry .time{color:#2d3448;margin-right:10px;user-select:none}
-.console-entry .text{color:#94a3b8;white-space:pre-wrap;word-break:break-all}
-.console-entry.cmd .text{color:#60a5fa;font-weight:600}
-.console-entry.resp .text{color:#4ade80}
-.console-entry.err .text{color:#f87171}
-.console-entry.info .text{color:#94a3b8}
-.console-empty{color:#2d3448;font-style:italic;padding:16px;text-align:center}
-.console-input{display:flex;gap:8px;flex-shrink:0}
-.console-input input{flex:1;padding:10px 14px;background:#060914;border:1px solid #141a2a;border-radius:8px;color:#e2e8f0;font-size:0.8rem;outline:none;font-family:'JetBrains Mono','Fira Code',monospace;transition:border-color 0.15s}
-.console-input input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f615}
-.console-input input::placeholder{color:#2d3448}
-.console-input button{padding:10px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-weight:600;font-size:0.78rem;cursor:pointer;transition:all 0.15s}
-.console-input button:hover{background:linear-gradient(135deg,#3b82f6,#60a5fa);box-shadow:0 4px 16px #3b82f644}
-.console-input button:active{transform:scale(0.97)}
+.term-input-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#080b16;border-top:1px solid #141a2a;flex-shrink:0}
+.term-input-bar .prompt-lbl{font-family:monospace;font-size:0.76rem;color:#f59e0b;font-weight:600;white-space:nowrap}
+.term-input-bar input{flex:1;background:transparent;border:none;color:#22c55e;font-family:'Courier New',monospace;font-size:0.76rem;outline:none}
+.term-input-bar input::placeholder{color:#1a2030;font-style:italic}
+.term-input-bar .input-status{font-size:0.58rem;color:#2d3448;white-space:nowrap}
 
-/* ─── Terminal Tab ──────────────────────────── */
-.term-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden}
-.term-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:#060914;border-bottom:1px solid #141a2a;flex-shrink:0}
-.term-header .left{display:flex;align-items:center;gap:10px}
-.term-header .left .dots{display:flex;gap:5px}
-.term-header .left .dots div{width:9px;height:9px;border-radius:50%;transition:all 0.2s}
-.term-header .left .dots .r{background:#ef4444}
-.term-header .left .dots .y{background:#f59e0b}
-.term-header .left .dots .g{background:#22c55e}
-.term-header .left .term-title{font-family:'JetBrains Mono','Fira Code',monospace;font-size:0.7rem;color:#475569}
-.term-header .right{display:flex;gap:14px;font-size:0.62rem;color:#2d3448}
-.term-header .right span{display:flex;align-items:center;gap:4px}
-.term-body{flex:1;min-height:0;background:#050812;padding:10px 14px;font-family:'JetBrains Mono','Fira Code','Courier New',monospace;font-size:0.78rem;line-height:1.6;overflow-y:auto;white-space:pre-wrap;word-break:break-all;cursor:text}
-.term-body .term-text{color:#22c55e;margin:0;padding:0}
-.term-body .term-text.info{color:#60a5fa}
-.term-body .term-text.error{color:#ef4444}
-.term-body .term-text.warn{color:#fbbf24}
-.term-body .term-text.dim{color:#3b4252}
-.term-body .term-text.prompt{color:#f59e0b;font-weight:600}
-.term-body .banner-line{color:#4ade80;white-space:pre;font-size:0.72rem}
-.term-input-row{display:flex;align-items:center;gap:4px;padding:0;margin-top:2px}
-.term-input-row .prompt{color:#f59e0b;font-weight:600;font-family:monospace;font-size:0.78rem;white-space:nowrap}
-.term-input-row .buffer{color:#22c55e;font-family:monospace;font-size:0.78rem}
-.term-input-row .cursor{width:8px;height:16px;background:#22c55e;animation:blink 1s step-end infinite;flex-shrink:0}
-.term-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#080b16;border-top:1px solid #141a2a;flex-shrink:0}
-.term-bar .prompt-label{font-family:monospace;font-size:0.78rem;color:#f59e0b;font-weight:600;white-space:nowrap}
-.term-bar input{flex:1;background:transparent;border:none;color:#22c55e;font-family:'JetBrains Mono','Courier New',monospace;font-size:0.78rem;outline:none;caret-color:#22c55e}
-.term-bar input::placeholder{color:#1a2030;font-style:italic}
+/* Port Detail Modal */
+.mo{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000aa;z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.mo.open{display:flex}
+.mb{background:linear-gradient(145deg,#0c1020,#111628);border:1px solid #1a2030;border-radius:14px;width:600px;max-width:92vw;max-height:80vh;overflow-y:auto;padding:22px;position:relative;box-shadow:0 20px 60px #00000066;animation:fadeIn 0.2s ease}
+.mc{position:absolute;top:10px;right:12px;background:none;border:none;color:#3b4252;font-size:1.2rem;cursor:pointer;padding:2px 7px;border-radius:5px;transition:all 0.12s}
+.mc:hover{background:#0f1420;color:#e2e8f0}
+.mt{font-size:0.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.mi{background:#060914;border:1px solid #141a2a;border-radius:8px;padding:8px 10px}
+.mi .ml{font-size:0.5rem;color:#3b4252;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:2px}
+.mi .mv{font-size:0.78rem;font-weight:600;font-family:monospace}
+.mm{background:#060914;border:1px solid #141a2a;border-radius:8px;padding:10px;margin-bottom:8px}
+.mm .ml{font-size:0.5rem;color:#3b4252;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px}
+.mmr{font-family:monospace;font-size:0.65rem;color:#94a3b8;padding:2px 0;border-bottom:1px solid #0a0e1c}
+.mmr:last-child{border-bottom:none}
+.mme{color:#2d3448;padding:8px;text-align:center;font-size:0.68rem}
+.ml2{color:#3b4252;font-size:0.65rem;padding:6px;font-family:monospace}
+.ma{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.ma button{padding:5px 12px;border-radius:6px;border:1px solid #141a2a;background:#0c1020;color:#64748b;cursor:pointer;font-size:0.65rem;transition:all 0.1s;display:flex;align-items:center;gap:3px}
+.ma button:hover{background:#111628;color:#94a3b8;border-color:#1e2a40}
+.ma button.primary{background:#1e40af22;border-color:#3b82f644;color:#60a5fa}
+.ma button.primary:hover{background:#1e40af44;border-color:#3b82f6}
+.ma button.danger{color:#f87171}
+.ma button.danger:hover{background:#1f0a0a;border-color:#ef444466}
 
-/* ─── Port Detail Modal ─────────────────────── */
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#000000aa;z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
-.modal-overlay.open{display:flex}
-.modal-box{background:linear-gradient(145deg,#0c1020,#111628);border:1px solid #1a2030;border-radius:16px;width:620px;max-width:92vw;max-height:82vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 24px 80px #00000066,0 0 0 1px #3b82f608;animation:fadeIn 0.2s ease}
-.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#3b4252;font-size:1.3rem;cursor:pointer;padding:2px 8px;border-radius:6px;transition:all 0.15s}
-.modal-close:hover{background:#0f1420;color:#e2e8f0}
-.modal-title{font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.modal-info{background:#060914;border:1px solid #141a2a;border-radius:10px;padding:10px 12px}
-.modal-info .ml{font-size:0.55rem;color:#3b4252;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px}
-.modal-info .mv{font-size:0.82rem;font-weight:600;font-family:'JetBrains Mono',monospace}
-.modal-mac-section{background:#060914;border:1px solid #141a2a;border-radius:10px;padding:12px;margin-bottom:10px}
-.modal-mac-section .ml{font-size:0.55rem;color:#3b4252;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px}
-.modal-mac-row{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#94a3b8;padding:3px 0;border-bottom:1px solid #0a0e1c}
-.modal-mac-row:last-child{border-bottom:none}
-.modal-mac-empty{color:#2d3448;padding:10px;text-align:center;font-size:0.72rem}
-.modal-loading{color:#3b4252;font-size:0.7rem;padding:8px;font-family:monospace}
-.modal-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.modal-actions button{padding:6px 14px;border-radius:7px;border:1px solid #141a2a;background:#0c1020;color:#64748b;cursor:pointer;font-size:0.68rem;transition:all 0.12s;display:flex;align-items:center;gap:4px}
-.modal-actions button:hover{background:#111628;color:#94a3b8;border-color:#1e2a40}
-.modal-actions button.danger{color:#f87171}
-.modal-actions button.danger:hover{background:#1f0a0a;border-color:#ef444466}
-.modal-actions button.primary{background:#1e40af22;border-color:#3b82f644;color:#60a5fa}
-.modal-actions button.primary:hover{background:#1e40af44;border-color:#3b82f6}
+/* Toast */
+.tc{position:fixed;top:56px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.tx{padding:9px 14px;border-radius:8px;font-size:0.72rem;font-weight:500;pointer-events:auto;animation:ti 0.25s ease, to 0.3s ease 3.7s forwards;box-shadow:0 6px 24px #00000066;border:1px solid;max-width:340px;line-height:1.4}
+.tx.info{background:#0a1428;border-color:#1e3a5f;color:#60a5fa}
+.tx.success{background:#0a1f12;border-color:#166534;color:#4ade80}
+.tx.error{background:#1a0808;border-color:#520a0a;color:#f87171}
+.tx.warn{background:#1a1408;border-color:#5a4010;color:#fbbf24}
+@keyframes ti{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes to{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 
-/* ─── Toast ─────────────────────────────────── */
-.toast-container{position:fixed;top:60px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{padding:10px 16px;border-radius:10px;font-size:0.75rem;font-weight:500;pointer-events:auto;animation:toastIn 0.25s ease, toastOut 0.3s ease 4.2s forwards;box-shadow:0 8px 30px #00000066;border:1px solid;max-width:360px;line-height:1.4}
-.toast.info{background:#0a1428;border-color:#1e3a5f;color:#60a5fa}
-.toast.success{background:#0a1f12;border-color:#166534;color:#4ade80}
-.toast.error{background:#1a0808;border-color:#520a0a;color:#f87171}
-.toast.warn{background:#1a1408;border-color:#5a4010;color:#fbbf24}
-@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
-@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
+/* Reboot Modal */
+.rm{text-align:center;padding:8px}
+.rm .wi{font-size:2.8rem;margin-bottom:10px}
+.rm h3{color:#f87171;margin-bottom:6px;font-size:1.05rem}
+.rm p{color:#64748b;font-size:0.75rem;margin-bottom:16px;line-height:1.5}
+.rm .bg{display:flex;gap:10px;justify-content:center}
+.rm .bg button{padding:9px 22px;border-radius:7px;border:1px solid;font-size:0.75rem;cursor:pointer;font-weight:600;transition:all 0.1s}
+.rm .bg .bc{background:#dc2626;border-color:#ef4444;color:#fff}
+.rm .bg .bc:hover{background:#ef4444}
+.rm .bg .bx{background:#0f1420;border-color:#1a2030;color:#64748b}
+.rm .bg .bx:hover{background:#1a2030;color:#94a3b8}
 
-/* ─── Reboot Modal (custom) ─────────────────── */
-.reboot-inner{text-align:center;padding:10px}
-.reboot-inner .warn-icon{font-size:3rem;margin-bottom:12px}
-.reboot-inner h3{color:#f87171;margin-bottom:8px;font-size:1.1rem}
-.reboot-inner p{color:#64748b;font-size:0.78rem;margin-bottom:18px;line-height:1.5}
-.reboot-inner .btn-group{display:flex;gap:12px;justify-content:center}
-.reboot-inner .btn-group button{padding:10px 24px;border-radius:8px;border:1px solid;font-size:0.78rem;cursor:pointer;font-weight:600;transition:all 0.12s}
-.reboot-inner .btn-confirm{background:#dc2626;border-color:#ef4444;color:#fff}
-.reboot-inner .btn-confirm:hover{background:#ef4444}
-.reboot-inner .btn-cancel{background:#0f1420;border-color:#1a2030;color:#64748b}
-.reboot-inner .btn-cancel:hover{background:#1a2030;color:#94a3b8}
-
-/* ─── Responsive ────────────────────────────── */
-@media(max-width:800px){.sidebar{width:220px;min-width:220px}.grid-4{grid-template-columns:1fr 1fr}.status-bar{gap:12px}}
-@media(max-width:600px){.sidebar{display:none}.topbar-left h2{font-size:0.8rem}.grid-4{grid-template-columns:1fr}.modal-box{width:96vw;padding:16px}}
+@media(max-width:768px){.sidebar{width:200px;min-width:200px}.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.sidebar{display:none}.grid-4{grid-template-columns:1fr}.term-actions{gap:3px}.mb{width:94vw;padding:14px}}
 </style>
 </head>
 <body>
 
 <div class="app-shell">
 
-  <!-- ─── Sidebar ──────────────────────────── -->
+  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">
       <span class="logo">⚡ Switch Monitor</span>
-      <span class="logo-sub">v2</span>
+      <span class="badge-v">v3</span>
     </div>
     <div class="sidebar-search">
-      <input type="text" placeholder="🔍 Search switches..." id="searchInput" oninput="filterSwitches(this.value)">
+      <input type="text" placeholder="🔍 Search switches..." id="searchInput" oninput="doFilter(this.value)">
     </div>
     <div class="sidebar-list" id="switchList">
-      <div style="color:#2d3448;font-size:0.72rem;padding:20px;text-align:center">Loading...</div>
+      <div style="color:#2d3448;font-size:0.7rem;padding:20px;text-align:center">Loading...</div>
     </div>
     <div class="sidebar-footer">
-      <span id="sidebarOnline">0 online</span>
-      <span id="sidebarTotal">0 switches</span>
+      <span id="sOnline">0 online</span>
+      <span id="sTotal">0 switches</span>
     </div>
   </div>
 
-  <!-- ─── Main ──────────────────────────────── -->
+  <!-- Main -->
   <div class="main">
 
-    <!-- Empty State -->
     <div class="empty-state" id="emptyState">
       <div class="big-icon">🔌</div>
       <h3>Select a switch</h3>
-      <p>Click a switch from the sidebar to view live monitoring, control ports, run CLI commands, and more.</p>
+      <p>Click a switch from the sidebar to view live monitoring and CLI terminal access.</p>
     </div>
 
-    <!-- Device Panel -->
     <div id="devicePanel" style="display:none;flex-direction:column;height:100%">
 
-      <!-- Top Bar -->
-      <div class="topbar" id="deviceTopbar">
+      <!-- Topbar -->
+      <div class="topbar">
         <div class="topbar-left">
-          <h2>🔌 <span class="device-name" id="deviceName">Switch</span></h2>
-          <div class="topbar-status"><span class="dot up" id="deviceDot"></span><span id="deviceStatus">Online</span></div>
+          <h2>🔌 <span class="dev" id="devName">Switch</span></h2>
+          <div class="topbar-status"><span class="dot" id="devDot"></span><span id="devStatus">—</span></div>
         </div>
         <div class="topbar-right">
-          <span class="badge-online" id="deviceCpuBadge">💻 CPU --%</span>
-          <span class="badge-cpu" id="deviceMemBadge">🧠 -- MB</span>
-          <button class="topbar-btn" onclick="refreshAll()">↻ Refresh</button>
-          <button class="topbar-btn danger" onclick="showRebootModal()">⏻ Reboot</button>
+          <span class="badge-stat cpu" id="cpuBadge">⚡ --%</span>
+          <span class="badge-stat mem" id="memBadge">🧠 --</span>
+          <button class="topbar-btn" onclick="doRefresh()">↻ Refresh</button>
+          <button class="topbar-btn danger" onclick="showReboot()">⏻ Reboot</button>
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs" id="deviceTabs">
-        <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')">
-          <span class="tab-icon">📊</span> Live Monitor
-        </div>
-        <div class="tab" data-tab="console" onclick="switchTab('console')">
-          <span class="tab-icon">📟</span> Console <span class="tab-badge" id="consoleBadge">0</span>
-        </div>
-        <div class="tab" data-tab="terminal" onclick="switchTab('terminal')">
-          <span class="tab-icon">🖥️</span> SSH/Telnet
-        </div>
+      <!-- Tabs (only Monitor + Terminal) -->
+      <div class="tabs">
+        <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')"><span class="tab-icon">📊</span> Live Monitor</div>
+        <div class="tab" data-tab="terminal" onclick="switchTab('terminal')"><span class="tab-icon">🖥️</span> SSH/Telnet Console</div>
       </div>
 
-      <!-- ─── Tab: Monitor ──────────────────── -->
+      <!-- Tab: Monitor -->
       <div class="tab-content active" id="tab-monitor">
-
-        <!-- Status Bar -->
         <div class="status-bar" id="statusBar"></div>
-
-        <!-- Info Cards -->
         <div class="grid-4" id="infoCards"></div>
-
-        <!-- Port Section -->
-        <div id="portSection" style="margin-top:4px">
-          <div class="port-section-header" onclick="togglePortSection()">
-            <div class="left">
-              <span style="font-size:1rem">🔌</span>
-              <span>Port Status</span>
-            </div>
-            <div class="right">
-              <span class="port-summary" id="portSummary"></span>
-              <span class="port-toggle" id="portToggle">▼</span>
+        <div id="portSection">
+          <div class="psh" onclick="togglePorts()">
+            <div class="pl"><span style="font-size:0.95rem">🔌</span><span>Port Status</span></div>
+            <div class="pr">
+              <span class="ps" id="portSum"></span>
+              <span class="pt" id="portToggle">▼</span>
             </div>
           </div>
-          <div class="port-grid" id="portGrid" style="display:none;margin-bottom:12px"></div>
-        </div>
-
-      </div>
-
-      <!-- ─── Tab: Console ──────────────────── -->
-      <div class="tab-content full" id="tab-console">
-        <div class="console-wrap">
-          <div class="console-actions" id="consoleActions"></div>
-          <div class="console-history" id="consoleHistory">
-            <div class="console-empty">⌨️ Type a command and press Enter · ↑↓ for history</div>
-          </div>
-          <div class="console-input">
-            <input type="text" id="cmdInput" placeholder="e.g. show version, show interface, show running-config..." onkeydown="handleConsoleKey(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-            <button onclick="sendCmd()">▶ Send</button>
-          </div>
+          <div class="pg" id="portGrid" style="display:none"></div>
         </div>
       </div>
 
-      <!-- ─── Tab: Terminal ─────────────────── -->
+      <!-- Tab: Terminal (merged Console + SSH/Telnet) -->
       <div class="tab-content full" id="tab-terminal">
-        <div class="term-wrap">
-          <div class="term-header">
-            <div class="left">
-              <div class="dots"><div class="r"></div><div class="y"></div><div class="g"></div></div>
-              <span class="term-title" id="termTitle">admin@switch#</span>
-            </div>
-            <div class="right">
-              <span>🔌 <span id="termDevice">—</span></span>
-              <span>📝 <span id="termLineCount">0</span> lines</span>
-              <span>🔐 Telnet/MQTT</span>
-            </div>
-          </div>
-          <div class="term-body" id="termBody" onclick="termFocus()"></div>
-          <div class="term-bar">
-            <span class="prompt-label" id="termPrompt">admin@switch#</span>
+        <div class="term-outer">
+          <div class="term-actions" id="termActions"></div>
+          <div class="term-screen" id="termScreen" onclick="focusTerm()"></div>
+          <div class="term-input-bar">
+            <span class="prompt-lbl" id="promptLabel">admin@switch#</span>
             <input type="text" id="termInput" placeholder="Type a command..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <span class="input-status" id="inputStatus"></span>
           </div>
         </div>
       </div>
@@ -386,39 +299,32 @@ svg.gauge .fg{transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
   </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- Toast -->
+<div class="tc" id="toastBox"></div>
 
-<!-- Port Detail Modal -->
-<div class="modal-overlay" id="portModal" onclick="if(event.target===this)closePortModal()">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closePortModal()">✕</button>
-    <div class="modal-title" id="portModalTitle">🔌 Port</div>
-    <div class="modal-grid" id="portModalInfo"></div>
-    <div class="modal-mac-section">
-      <div class="ml">🔗 Learned MACs & Details</div>
-      <div id="portModalMacs"><div class="modal-mac-empty">Loading...</div></div>
+<!-- Port Modal -->
+<div class="mo" id="portModal" onclick="if(event.target===this)closePortModal()">
+  <div class="mb">
+    <button class="mc" onclick="closePortModal()">✕</button>
+    <div class="mt" id="portMT">🔌 Port</div>
+    <div class="mg" id="portMI"></div>
+    <div class="mm">
+      <div class="ml">🔗 MAC Addresses & Details</div>
+      <div id="portMM"><div class="mme">Loading...</div></div>
     </div>
-    <div class="modal-actions" id="portModalActions">
-      <button class="primary" onclick="fetchPortDetail('show interface')">📋 Show Interface</button>
-      <button class="primary" onclick="fetchPortDetail('show mac address-table interface')">🔗 Show MAC</button>
-      <button onclick="portAction('shutdown')">⛔ Shutdown</button>
-      <button class="primary" onclick="portAction('no shutdown')">✅ No Shutdown</button>
-      <button onclick="portSetDescription()">✏️ Set Desc</button>
-      <button onclick="closePortModal()">✕ Close</button>
-    </div>
+    <div class="ma" id="portMA"></div>
   </div>
 </div>
 
-<!-- Reboot Confirm Modal -->
-<div class="modal-overlay" id="rebootModal" onclick="if(event.target===this)closeRebootModal()">
-  <div class="modal-box reboot-inner" style="width:380px;max-width:90vw">
-    <div class="warn-icon">⚠️</div>
+<!-- Reboot Modal -->
+<div class="mo" id="rebootModal" onclick="if(event.target===this)closeReboot()">
+  <div class="mb rm" style="max-width:360px">
+    <div class="wi">⚠️</div>
     <h3>Reboot Switch?</h3>
-    <p>This will restart the switch and disconnect all connected ports. The switch will take 30–60 seconds to come back online.</p>
-    <div class="btn-group">
-      <button class="btn-confirm" onclick="confirmReboot()">⏻ Yes, Reboot</button>
-      <button class="btn-cancel" onclick="closeRebootModal()">Cancel</button>
+    <p>This will restart the switch and disconnect all ports. The switch will take 30–60 seconds to come back online.</p>
+    <div class="bg">
+      <button class="bc" onclick="doReboot()">⏻ Yes, Reboot</button>
+      <button class="bx" onclick="closeReboot()">Cancel</button>
     </div>
   </div>
 </div>
@@ -428,160 +334,174 @@ svg.gauge .fg{transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
 // STATE
 // ═══════════════════════════════════════════════════════════════
 
-const API = window.location.origin + '/api';
-let switches = {};
-let selectedId = null;
-let pollTimer = null;
-let consoleHistory = [];
-let termBuffer = '';
-let termHistory = [];
-let termHistIdx = -1;
-let termLines = 0;
+var API = window.location.origin + '/api';
+var switches = {};
+var selectedId = null;
+var pollTimer = null;
+
+// Terminal state
+var termBuf = '';
+var termHist = [];
+var termHistIdx = -1;
+var termLineCount = 0;
+var cmdHistory = []; // sent commands for history
+var cmdWaiting = false;
+
+// Port state
+var portData = [];
+var curPortName = '';
+var curPortIdx = '';
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-function clean(v){ return (v||'').toString().replace(/^"|"$/g,'').trim() }
-function esc(t){ return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function cln(v){return(v||'').toString().replace(/^"|"$/g,'').trim()}
+function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function fmtSpeed(s){
+function fmtSp(s){
   if(!s||s===4294967295)return'Virtual'
-  if(s>=1e9)return (s/1e9).toFixed(s%1e9?1:0)+' Gbps'
-  if(s>=1e6)return (s/1e6).toFixed(0)+' Mbps'
-  if(s>=1e3)return (s/1e3).toFixed(0)+' Kbps'
-  return s+' bps'
+  if(s>=1e9)return(s/1e9).toFixed(s%1e9?1:0)+'G'
+  if(s>=1e6)return(s/1e6).toFixed(0)+'M'
+  if(s>=1e3)return(s/1e3).toFixed(0)+'K'
+  return s+'b'
 }
-function fmtBytes(b){
+function fmtB(b){
   b=Number(b||0)
-  if(b>=1073741824)return (b/1073741824).toFixed(2)+' GB'
-  if(b>=1048576)return (b/1048576).toFixed(1)+' MB'
-  if(b>=1024)return (b/1024).toFixed(1)+' KB'
-  return b+' B'
+  if(b>=1073741824)return(b/1073741824).toFixed(2)+'GB'
+  if(b>=1048576)return(b/1048576).toFixed(1)+'MB'
+  if(b>=1024)return(b/1024).toFixed(1)+'KB'
+  return b+'B'
 }
-function fmtUptime(s){
-  let sec=Math.max(0,Math.floor(Number(s||0)))
-  let d=Math.floor(sec/86400),h=Math.floor((sec%86400)/3600),m=Math.floor((sec%3600)/60),sec2=sec%60
+function fmtUp(s){
+  var sec=Math.max(0,Math.floor(Number(s||0)))
+  var d=Math.floor(sec/86400),h=Math.floor((sec%86400)/3600),m=Math.floor((sec%3600)/60),sc=sec%60
   if(d>0)return d+'d '+h+'h '+m+'m'
   if(h>0)return h+'h '+m+'m'
-  if(m>0)return m+'m '+sec2+'s'
-  return sec2+'s'
+  if(m>0)return m+'m '+sc+'s'
+  return sc+'s'
 }
+function isPhys(p){return/^Giga|^Fast|^Ten/i.test(p.name||'')}
 
 // ═══════════════════════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════════════════════
 
-function toast(msg,type='info'){
-  const c=document.getElementById('toastContainer')
-  const t=document.createElement('div')
-  t.className='toast '+type
+function toast(msg,type){
+  if(!type)type='info'
+  var c=document.getElementById('toastBox')
+  var t=document.createElement('div')
+  t.className='tx '+type
   t.textContent=msg
   c.appendChild(t)
-  setTimeout(()=>{if(t.parentNode)t.parentNode.removeChild(t)},5000)
+  setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t)},4500)
 }
 
 // ═══════════════════════════════════════════════════════════════
 // MODALS
 // ═══════════════════════════════════════════════════════════════
 
-function showRebootModal(){document.getElementById('rebootModal').classList.add('open')}
-function closeRebootModal(){document.getElementById('rebootModal').classList.remove('open')}
-function confirmReboot(){
-  closeRebootModal()
-  quickCmd('reboot')
-  toast('⏻ Reboot command sent — switch will restart','warn')
-}
-
+function showReboot(){document.getElementById('rebootModal').classList.add('open')}
+function closeReboot(){document.getElementById('rebootModal').classList.remove('open')}
 function closePortModal(){document.getElementById('portModal').classList.remove('open')}
+
+function doReboot(){
+  closeReboot()
+  toast('⏻ Reboot command sent — switch will restart','warn')
+  quickCmd('reboot')
+}
 
 // ═══════════════════════════════════════════════════════════════
 // API
 // ═══════════════════════════════════════════════════════════════
 
-async function fetchSwitches(){
-  try{
-    const r=await fetch(API+'/switches')
-    const list=await r.json()
-    for(const sw of list) switches[sw.id]={...switches[sw.id],...sw}
+function fetchAll(){
+  fetch(API+'/switches').then(function(r){return r.json()}).then(function(list){
+    for(var i=0;i<list.length;i++) switches[list[i].id]=Object.assign({},switches[list[i].id],list[i])
     renderSidebar()
     if(selectedId&&switches[selectedId]) renderDevice(selectedId)
     else if(Object.keys(switches).length>0&&!selectedId){
-      const on=Object.values(switches).find(s=>s.status==='online')
-      if(on) selectSwitch(on.id)
+      for(var k in switches){if(switches[k].status==='online'){selectSw(k);break}}
     }
-  }catch(e){console.error(e);toast('Failed to fetch switches: '+e.message,'error')}
+  }).catch(function(e){console.error(e)})
 }
 
-async function sendCmdToSwitch(id,cmd){
-  const r=await fetch(API+'/switches/'+id+'/cmd',{
+function sendAPI(id,cmd){
+  return fetch(API+'/switches/'+id+'/cmd',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cmd})
-  })
-  return r.json()
+    body:JSON.stringify({cmd:cmd})
+  }).then(function(r){return r.json()})
 }
 
 // ═══════════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════════
 
+function doFilter(val){renderSidebar(val)}
+
 function renderSidebar(filter){
-  const el=document.getElementById('switchList')
-  const ids=Object.keys(switches)
+  var el=document.getElementById('switchList')
+  var ids=Object.keys(switches)
   if(ids.length===0){
-    el.innerHTML='<div style="color:#2d3448;padding:20px;text-align:center;font-size:0.72rem">No switches detected</div>'
+    el.innerHTML='<div style="color:#2d3448;padding:20px;text-align:center;font-size:0.7rem">No switches detected</div>'
     return
   }
-  let list=ids.map(id=>switches[id])
+  var list=[]
+  for(var i=0;i<ids.length;i++)list.push(switches[ids[i]])
   if(filter){
-    const f=filter.toLowerCase()
-    list=list.filter(s=>(s.hostname||s.name||'').toLowerCase().includes(f)||(s.ip||'').includes(f)||s.id.toLowerCase().includes(f))
+    var f=filter.toLowerCase()
+    var tmp=[]
+    for(var i=0;i<list.length;i++){
+      var s=list[i]
+      if((s.hostname||s.name||'').toLowerCase().indexOf(f)>=0||(s.ip||'').indexOf(f)>=0||s.id.toLowerCase().indexOf(f)>=0)
+        tmp.push(s)
+    }
+    list=tmp
   }
-  el.innerHTML=list.map(sw=>{
-    const act=sw.id===selectedId
-    const on=sw.status==='online'
-    const cpu=sw.cpu!==null&&sw.cpu!==undefined?sw.cpu:null
-    const temp=sw.temperature!==null&&sw.temperature!==undefined?sw.temperature:null
-    return `<div class="sw-card ${act?'active':''}" onclick="selectSwitch('${sw.id}')">
-      <div class="top">
-        <span style="font-size:0.6rem">${on?'🟢':'🔴'}</span>
-        <span class="name">${esc(clean(sw.hostname||sw.name||sw.id))}</span>
-      </div>
-      <div class="ip">${sw.ip||'—'}</div>
-      <div class="stats">
-        ${on!==null?`<span class="stat ${on?'online':''}">${on?'● ONLINE':'○ OFFLINE'}</span>`:''}
-        ${cpu!==null?`<span class="stat cpu">⚡${cpu}%</span>`:''}
-        ${temp!==null?`<span class="stat temp">🌡️${temp}°C</span>`:''}
-        ${sw.ports?`<span class="stat">🔌${sw.ports}</span>`:''}
-      </div>
-    </div>`
-  }).join('')
-
-  const onCount=ids.filter(id=>switches[id].status==='online').length
-  document.getElementById('sidebarOnline').textContent=onCount+' online'
-  document.getElementById('sidebarTotal').textContent=ids.length+' switches'
+  var html=''
+  for(var i=0;i<list.length;i++){
+    var sw=list[i],act=sw.id===selectedId,on=sw.status==='online'
+    var cpu=sw.cpu!==null&&sw.cpu!==undefined?sw.cpu:null
+    var temp=sw.temperature!==null&&sw.temperature!==undefined?sw.temperature:null
+    html+='<div class="sw-card'+(act?' active':'')+'" onclick="selectSw(\''+sw.id+'\')">'
+     +'<div class="top"><span style="font-size:0.55rem">'+(on?'🟢':'🔴')+'</span>'
+     +'<span class="name">'+esc(cln(sw.hostname||sw.name||sw.id))+'</span></div>'
+     +'<div class="ip">'+(sw.ip||'—')+'</div>'
+     +'<div class="stats">'
+     +(on!==null?'<span class="stat'+(on?' online':'')+'">'+(on?'● ONLINE':'○ OFFLINE')+'</span>':'')
+     +(cpu!==null?'<span class="stat cpu">⚡'+cpu+'%</span>':'')
+     +(temp!==null?'<span class="stat temp">🌡'+temp+'°C</span>':'')
+     +(sw.ports?'<span class="stat">🔌'+sw.ports+'</span>':'')
+     +'</div></div>'
+  }
+  el.innerHTML=html
+  var onC=0
+  for(var i=0;i<ids.length;i++)if(switches[ids[i]].status==='online')onC++
+  document.getElementById('sOnline').textContent=onC+' online'
+  document.getElementById('sTotal').textContent=ids.length+' switches'
 }
-
-function filterSwitches(val){renderSidebar(val)}
 
 // ═══════════════════════════════════════════════════════════════
 // TAB SWITCHING
 // ═══════════════════════════════════════════════════════════════
 
 function switchTab(name){
-  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'))
-  document.querySelector(`.tabs .tab[data-tab="${name}"]`).classList.add('active')
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'))
-  const tab=document.getElementById('tab-'+name)
-  if(tab) tab.classList.add('active')
-  if(name==='terminal') setTimeout(termFocus,100)
+  var tabs=document.querySelectorAll('.tabs .tab')
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active')
+  var tab=document.querySelector('.tabs .tab[data-tab="'+name+'"]')
+  if(tab)tab.classList.add('active')
+  var contents=document.querySelectorAll('.tab-content')
+  for(var i=0;i<contents.length;i++)contents[i].classList.remove('active')
+  var ct=document.getElementById('tab-'+name)
+  if(ct)ct.classList.add('active')
+  if(name==='terminal')setTimeout(focusTerm,100)
 }
 
 // ═══════════════════════════════════════════════════════════════
 // SELECT SWITCH
 // ═══════════════════════════════════════════════════════════════
 
-function selectSwitch(id){
+function selectSw(id){
   selectedId=id
   renderSidebar()
   document.getElementById('emptyState').style.display='none'
@@ -590,44 +510,33 @@ function selectSwitch(id){
 }
 
 function renderDevice(id){
-  const sw=switches[id]
-  if(!sw) return
-  const on=sw.status==='online'
+  var sw=switches[id]
+  if(!sw)return
+  var on=sw.status==='online'
 
-  // Topbar
-  document.getElementById('deviceName').textContent=clean(sw.hostname||sw.name||sw.id)
-  document.getElementById('deviceDot').className='dot '+(on?'up':'down')
-  document.getElementById('deviceStatus').textContent=on?'Online':'Offline'
-  document.getElementById('deviceCpuBadge').innerHTML='💻 CPU '+(sw.cpu!==null&&sw.cpu!==undefined?sw.cpu+'%':'--')
-  document.getElementById('deviceMemBadge').innerHTML='🧠 '+(sw.memory?sw.memory.usedMB+' MB':'-- MB')
+  document.getElementById('devName').textContent=cln(sw.hostname||sw.name||sw.id)
+  document.getElementById('devDot').className='dot '+(on?'up':'down')
+  document.getElementById('devStatus').textContent=on?'Online':'Offline'
+  document.getElementById('cpuBadge').innerHTML='⚡ '+(sw.cpu!==null&&sw.cpu!==undefined?sw.cpu+'%':'--')
+  document.getElementById('memBadge').innerHTML='🧠 '+(sw.memory?sw.memory.usedMB+'MB':'--')
 
-  // Status Bar
-  const uptime=fmtUptime(sw.uptime)
-  const model=clean(sw.model||'—').substring(0,35)
   document.getElementById('statusBar').innerHTML=
-    `<div class="item"><div class="label">Hostname</div><div class="value"><span class="mono">${esc(clean(sw.hostname||sw.name||sw.id))}</span></div></div>
-    <div class="status-divider"></div>
-    <div class="item"><div class="label">IP Address</div><div class="value"><span class="mono">${sw.ip||'—'}</span></div></div>
-    <div class="status-divider"></div>
-    <div class="item"><div class="label">MAC</div><div class="value"><span class="mono">${sw.mac||'—'}</span></div></div>
-    <div class="status-divider"></div>
-    <div class="item"><div class="label">Model</div><div class="value">${esc(model)}</div></div>
-    <div class="status-divider"></div>
-    <div class="item"><div class="label">Uptime</div><div class="value">${uptime}</div></div>
-    <div class="status-divider"></div>
-    <div class="item"><div class="label">Firmware</div><div class="value">${esc(sw.firmware||'—')}</div></div>`
+    '<div class="item"><div class="label">Hostname</div><div class="value"><span class="mono">'+esc(cln(sw.hostname||sw.name||sw.id))+'</span></div></div>'
+    +'<div class="sb-div"></div>'
+    +'<div class="item"><div class="label">IP</div><div class="value"><span class="mono">'+(sw.ip||'—')+'</span></div></div>'
+    +'<div class="sb-div"></div>'
+    +'<div class="item"><div class="label">MAC</div><div class="value"><span class="mono">'+(sw.mac||'—')+'</span></div></div>'
+    +'<div class="sb-div"></div>'
+    +'<div class="item"><div class="label">Model</div><div class="value">'+esc(cln(sw.model||'—').substring(0,30))+'</div></div>'
+    +'<div class="sb-div"></div>'
+    +'<div class="item"><div class="label">Uptime</div><div class="value">'+fmtUp(sw.uptime)+'</div></div>'
+    +'<div class="sb-div"></div>'
+    +'<div class="item"><div class="label">Firmware</div><div class="value">'+esc(sw.firmware||'—')+'</div></div>'
 
-  // Info Cards
   renderCards(sw,on)
-
-  // Ports
   renderPorts(sw)
-
-  // Console actions
-  renderConsoleActions(sw)
-
-  // Terminal prompt
-  termPrompt(sw)
+  renderTermActions()
+  updatePrompt(sw)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -635,596 +544,450 @@ function renderDevice(id){
 // ═══════════════════════════════════════════════════════════════
 
 function renderCards(sw,on){
-  const cpu=sw.cpu!==null&&sw.cpu!==undefined?sw.cpu:0
-  const temp=sw.temperature!==null&&sw.temperature!==undefined?sw.temperature:null
-  const mem=sw.memory||{}
-  const memPct=mem.used||0
-  const memTotal=mem.total||128
-  const memUsedMB=mem.usedMB||0
-
-  const gauge=document.getElementById('gaugeCpu')
-  const r=28,c=2*Math.PI*r
-  const offset=c-(cpu/100)*c
-
-  const ports=sw.portList||[]
-  const upPorts=ports.filter(p=>p.status==='up'&&/^Giga|^Fast|^Ten/i.test(p.name||'')).length
-  const totalPhys=ports.filter(p=>/^Giga|^Fast|^Ten/i.test(p.name||'')).length
-
-  const maxIn=Math.max(...ports.map(p=>p.inBytes||0),1)
-  const maxOut=Math.max(...ports.map(p=>p.outBytes||0),1)
-
-  document.getElementById('infoCards').innerHTML=`
-    <div class="card">
-      <div class="card-header"><span class="card-icon">⚡</span><span class="card-label">CPU Utilization</span></div>
-      <div class="gauge-wrap">
-        <svg class="gauge" viewBox="0 0 60 60">
-          <circle class="bg" cx="30" cy="30" r="24"/>
-          <circle class="fg" cx="30" cy="30" r="24" stroke="${cpu>80?'#ef4444':cpu>50?'#f59e0b':'#22c55e'}" stroke-dasharray="${c}" stroke-dashoffset="${offset}"/>
-        </svg>
-      </div>
-      <div class="gauge-label" style="color:${cpu>80?'#f87171':cpu>50?'#fbbf24':'#4ade80'}">${cpu}%</div>
-      ${temp!==null?`<div class="card-foot" style="text-align:center">🌡️ ${temp}°C</div>`:''}
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-icon">🧠</span><span class="card-label">Memory</span></div>
-      <div class="card-value" style="font-size:1.3rem">${memUsedMB}<span style="font-size:0.7rem;color:#64748b;font-weight:400"> / ${memTotal} MB</span></div>
-      <div class="card-sub">${memPct}% used</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${memPct}%;background:${memPct>80?'#ef4444':memPct>50?'#f59e0b':'#3b82f6'}"></div></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-icon">🔌</span><span class="card-label">Ports</span></div>
-      <div class="card-value">${upPorts}<span style="font-size:0.7rem;color:#64748b;font-weight:400"> / ${totalPhys}</span></div>
-      <div class="card-sub">${totalPhys-upPorts} down · ${ports.length} total</div>
-      ${totalPhys>0?`<div class="bar-track"><div class="bar-fill" style="width:${(upPorts/totalPhys)*100}%;background:#22c55e"></div></div>`:''}
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-icon">📊</span><span class="card-label">Traffic</span></div>
-      <div class="card-value" style="font-size:1.1rem">↓ ${fmtBytes(maxIn)}</div>
-      <div class="card-sub" style="color:#a78bfa">↑ ${fmtBytes(maxOut)}</div>
-    </div>`
+  var cpu=sw.cpu!==null&&sw.cpu!==undefined?sw.cpu:0
+  var temp=sw.temperature
+  var mem=sw.memory||{}
+  var memPct=mem.used||0,memTotal=mem.total||128,memMB=mem.usedMB||0
+  var r=23,c=2*Math.PI*r,off=c-(cpu/100)*c
+  var clr=cpu>80?'#ef4444':cpu>50?'#f59e0b':'#22c55e'
+  var ports=sw.portList||[]
+  var upP=0,totP=0
+  for(var i=0;i<ports.length;i++){if(isPhys(ports[i])){totP++;if(ports[i].status==='up')upP++}}
+  var maxIn=1,maxOut=1
+  for(var i=0;i<ports.length;i++){maxIn=Math.max(maxIn,ports[i].inBytes||0);maxOut=Math.max(maxOut,ports[i].outBytes||0)}
+  document.getElementById('infoCards').innerHTML=
+    '<div class="card">'
+    +'<div class="ch"><span class="ci">⚡</span><span class="cl">CPU</span></div>'
+    +'<div class="gw"><svg class="ga" viewBox="0 0 54 54"><circle class="gb" cx="27" cy="27" r="23"/><circle class="gf" cx="27" cy="27" r="23" stroke="'+clr+'" stroke-dasharray="'+c.toFixed(2)+'" stroke-dashoffset="'+off.toFixed(2)+'"/></svg></div>'
+    +'<div class="gl" style="color:'+clr+'">'+cpu+'%</div>'
+    +(temp!==null?'<div class="cf" style="text-align:center">🌡 '+temp+'°C</div>':'')
+    +'</div>'
+    +'<div class="card"><div class="ch"><span class="ci">🧠</span><span class="cl">Memory</span></div>'
+    +'<div class="cv" style="font-size:1.2rem">'+memMB+' <span style="font-size:0.65rem;color:#64748b;font-weight:400">/ '+memTotal+' MB</span></div>'
+    +'<div class="cs">'+memPct+'% used</div>'
+    +'<div class="bar-tr"><div class="bar-fi" style="width:'+memPct+'%;background:'+(memPct>80?'#ef4444':memPct>50?'#f59e0b':'#3b82f6')+'"></div></div></div>'
+    +'<div class="card"><div class="ch"><span class="ci">🔌</span><span class="cl">Ports</span></div>'
+    +'<div class="cv">'+upP+' <span style="font-size:0.65rem;color:#64748b;font-weight:400">/ '+totP+'</span></div>'
+    +'<div class="cs">'+(totP-upP)+' down · '+ports.length+' total</div>'
+    +(totP>0?'<div class="bar-tr"><div class="bar-fi" style="width:'+(upP/totP*100)+'%;background:#22c55e"></div></div>':'')+'</div>'
+    +'<div class="card"><div class="ch"><span class="ci">📊</span><span class="cl">Traffic</span></div>'
+    +'<div class="cv" style="font-size:1rem">↓ '+fmtB(maxIn)+'</div>'
+    +'<div class="cs" style="color:#a78bfa">↑ '+fmtB(maxOut)+'</div></div>'
 }
 
 // ═══════════════════════════════════════════════════════════════
 // PORTS
 // ═══════════════════════════════════════════════════════════════
 
-let _portData=[]
-
 function renderPorts(sw){
-  const ports=sw.portList||[]
-  _portData=ports
-  const isPhysical=p=>/^Giga|^Fast|^Ten/i.test(p.name||'')
-  const phys=ports.filter(isPhysical)
-  const up=phys.filter(p=>p.status==='up').length
-  document.getElementById('portSummary').textContent=up+'/'+phys.length+' up  ·  '+ports.length+' total'
-  if(ports.length===0){
-    document.getElementById('portGrid').innerHTML='<div style="color:#2d3448;padding:12px;text-align:center">No port data</div>'
-    return
+  var ports=sw.portList||[]
+  portData=ports
+  var upP=0,totP=0
+  for(var i=0;i<ports.length;i++){if(isPhys(ports[i])){totP++;if(ports[i].status==='up')upP++}}
+  document.getElementById('portSum').textContent=upP+'/'+totP+' up · '+ports.length+' total'
+  if(ports.length===0){document.getElementById('portGrid').innerHTML='<div style="color:#2d3448;padding:10px;text-align:center">No ports</div>';return}
+  var mx=1
+  for(var i=0;i<ports.length;i++)mx=Math.max(mx,ports[i].inBytes||0,ports[i].outBytes||0)
+  var html=''
+  for(var i=0;i<ports.length;i++){
+    var p=ports[i],up=p.status==='up',nm=cln(p.name||'P'+p.index)
+    var ph=isPhys(p)
+    html+='<div class="ptile '+(up?'up':'down')+'" data-idx="'+p.index+'" title="'+esc(nm)+'\n'+fmtSp(p.speed)+'\n↓'+fmtB(p.inBytes||0)+' ↑'+fmtB(p.outBytes||0)+'">'
+    +'<div class="pld '+(up?'ld-up':'ld-down')+(ph&&up?' pulse':'')+'"></div>'
+    +'<div class="pid">'+(ph?'PHY':'LOG')+' #'+p.index+'</div>'
+    +'<div class="pnm">'+esc(nm.substring(0,14))+'</div>'
+    +'<div class="pst">'+(up?'● UP':'○ DOWN')+'</div>'
+    +'<div class="ptr">'+fmtB(p.inBytes||0)+'</div></div>'
   }
-
-  const maxBytes=Math.max(...ports.map(p=>Math.max(p.inBytes||0,p.outBytes||0)),1)
-  document.getElementById('portGrid').innerHTML=ports.map(p=>{
-    const up2=p.status==='up'
-    const name=clean(p.name||'Port '+p.index)
-    const phys2=isPhysical(p)
-    const inPct=Math.min(100,Math.round(((p.inBytes||0)/maxBytes)*100))
-    const outPct=Math.min(100,Math.round(((p.outBytes||0)/maxBytes)*100))
-    const activePort=phys2&&up2
-    return `<div class="port-tile ${up2?'up':'down'}" data-port-idx="${p.index}" title="${esc(name)}\n${fmtSpeed(p.speed)}\n↓${fmtBytes(p.inBytes||0)} ↑${fmtBytes(p.outBytes||0)}\n${p.mac?'MAC: '+p.mac:''}">
-      <div class="p-led ${up2?'up':''} ${activePort?'active':''}"></div>
-      <div class="p-idx">${phys2?'PHY':'LOG'} #${p.index}</div>
-      <div class="p-name">${esc(name.substring(0,16))}</div>
-      <div class="p-status">${up2?'● UP':'○ DOWN'}</div>
-      <div class="p-traffic">${fmtBytes(p.inBytes||0)}</div>
-    </div>`
-  }).join('')
-
+  document.getElementById('portGrid').innerHTML=html
   document.getElementById('portGrid').onclick=function(e){
-    const tile=e.target.closest('.port-tile')
+    var tile=e.target.closest('.ptile')
     if(!tile)return
-    const idx=tile.dataset.portIdx
-    const port=_portData.find(p=>String(p.index)===idx)
-    if(port) showPortModal(port,sw)
+    var idx=parseInt(tile.dataset.idx)
+    for(var i=0;i<portData.length;i++){if(String(portData[i].index)===String(idx)){showPort(portData[i],sw);break}}
   }
 }
 
-function togglePortSection(){
-  const grid=document.getElementById('portGrid')
-  const toggle=document.getElementById('portToggle')
-  const hidden=grid.style.display==='none'
-  grid.style.display=hidden?'grid':'none'
-  toggle.className='port-toggle'+(hidden?' open':'')
+function togglePorts(){
+  var g=document.getElementById('portGrid'),t=document.getElementById('portToggle')
+  var h=g.style.display==='none'
+  g.style.display=h?'grid':'none'
+  t.className='pt'+(h?' open':'')
 }
 
 // ═══════════════════════════════════════════════════════════════
 // PORT MODAL
 // ═══════════════════════════════════════════════════════════════
 
-let currentPortName='',currentPortIdx=''
-
-function showPortModal(port,sw){
-  const modal=document.getElementById('portModal')
-  const up=port.status==='up'
-  currentPortName=clean(port.name||'Port '+port.index)
-  currentPortIdx=port.index
-
-  document.getElementById('portModalTitle').innerHTML=`🔌 <span style="color:${up?'#22c55e':'#ef4444'}">●</span> ${esc(currentPortName)}`
-
-  document.getElementById('portModalInfo').innerHTML=`
-    <div class="modal-info"><div class="ml">Status</div><div class="mv" style="color:${up?'#22c55e':'#f87171'}">${up?'🟢 UP':'🔴 DOWN'}</div></div>
-    <div class="modal-info"><div class="ml">Port Index</div><div class="mv">${port.index||'?'}</div></div>
-    <div class="modal-info"><div class="ml">Traffic In</div><div class="mv" style="color:#60a5fa">↓ ${fmtBytes(port.inBytes||0)}</div></div>
-    <div class="modal-info"><div class="ml">Traffic Out</div><div class="mv" style="color:#a78bfa">↑ ${fmtBytes(port.outBytes||0)}</div></div>
-    <div class="modal-info"><div class="ml">Speed</div><div class="mv">${fmtSpeed(port.speed)}</div></div>
-    <div class="modal-info"><div class="ml">MAC Address</div><div class="mv">${port.mac||'—'}</div></div>`
-
-  document.getElementById('portModalMacs').innerHTML='<div class="modal-loading">🔍 Loading MAC addresses...</div>'
-  modal.classList.add('open')
-  fetchPortMacs(port,sw)
+function showPort(port,sw){
+  var up=port.status==='up'
+  curPortName=cln(port.name||'Port '+port.index)
+  curPortIdx=port.index
+  document.getElementById('portMT').innerHTML='🔌 <span style="color:'+(up?'#22c55e':'#ef4444')+'">●</span> '+esc(curPortName)
+  document.getElementById('portMI').innerHTML=
+    '<div class="mi"><div class="ml">Status</div><div class="mv" style="color:'+(up?'#22c55e':'#f87171')+'">'+(up?'🟢 UP':'🔴 DOWN')+'</div></div>'
+    +'<div class="mi"><div class="ml">Index</div><div class="mv">'+(port.index||'?')+'</div></div>'
+    +'<div class="mi"><div class="ml">Traffic In</div><div class="mv" style="color:#60a5fa">↓ '+fmtB(port.inBytes||0)+'</div></div>'
+    +'<div class="mi"><div class="ml">Traffic Out</div><div class="mv" style="color:#a78bfa">↑ '+fmtB(port.outBytes||0)+'</div></div>'
+    +'<div class="mi"><div class="ml">Speed</div><div class="mv">'+fmtSp(port.speed)+'</div></div>'
+    +'<div class="mi"><div class="ml">MAC</div><div class="mv">'+(port.mac||'—')+'</div></div>'
+  document.getElementById('portMA').innerHTML=
+    '<button class="primary" onclick="portDetail(\'show interface\')">📋 Show Interface</button>'
+    +'<button class="primary" onclick="portDetail(\'show mac address-table interface\')">🔗 Show MAC</button>'
+    +'<button onclick="portAction(\'shutdown\')">⛔ Shutdown</button>'
+    +'<button class="primary" onclick="portAction(\'no shutdown\')">✅ No Shutdown</button>'
+    +'<button onclick="portDesc()">✏️ Set Desc</button>'
+    +'<button onclick="closePortModal()">✕ Close</button>'
+  document.getElementById('portMM').innerHTML='<div class="ml2">🔍 Loading MAC addresses...</div>'
+  document.getElementById('portModal').classList.add('open')
+  loadPortMacs(port)
 }
 
-async function fetchPortMacs(port,sw){
-  try{
-    await sendCmdToSwitch(selectedId,'show mac address-table interface '+currentPortName)
-    let attempts=0
-    const prev=switches[selectedId]?.lastResponse||''
-    const check=setInterval(async()=>{
-      attempts++
-      try{
-        const r=await fetch(API+'/switches/'+selectedId)
-        const d=await r.json()
+function loadPortMacs(port){
+  sendAPI(selectedId,'show mac address-table interface '+curPortName).then(function(){
+    var prev=switches[selectedId]?.lastResponse||''
+    var att=0
+    var ch=setInterval(function(){
+      att++
+      fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
         if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(check)
-          const lines=(d.lastResponse||'').split('\n')
-          const macs=[]
-          for(const l of lines){
-            const m=l.match(/([0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}|[0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2})/)
+          clearInterval(ch)
+          var lines=(d.lastResponse||'').split('\n')
+          var macs=[]
+          for(var li=0;li<lines.length;li++){
+            var l=lines[li]
+            var m=l.match(/([0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}|[0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2})/)
             if(m){
-              const parts=l.trim().split(/\s+/)
+              var parts=l.trim().split(/\s+/)
               macs.push({mac:m[1],vlan:parts[0]||'?',type:parts[parts.length-1]||'dynamic'})
             }
           }
           if(macs.length>0){
-            document.getElementById('portModalMacs').innerHTML=macs.map(m=>
-              `<div class="modal-mac-row"><span style="color:#60a5fa;font-weight:600">${esc(m.mac)}</span>  <span style="color:#475569">VLAN ${esc(m.vlan)}</span>  <span style="color:#64748b;font-style:italic">${esc(m.type)}</span></div>`
-            ).join('')
-          } else {
-            const content=lines.slice(1,-1).filter(l=>l.trim()).join('\n')
-            document.getElementById('portModalMacs').innerHTML=content
-              ?`<div class="modal-mac-row" style="white-space:pre-wrap;color:#94a3b8">${esc(content)}</div>`
-              :'<div class="modal-mac-empty">No MAC addresses learned on this port</div>'
+            var mh=''
+            for(var mi=0;mi<macs.length;mi++)mh+='<div class="mmr"><span style="color:#60a5fa;font-weight:600">'+esc(macs[mi].mac)+'</span>  <span style="color:#475569">VLAN '+esc(macs[mi].vlan)+'</span>  <span style="color:#64748b;font-style:italic">'+esc(macs[mi].type)+'</span></div>'
+            document.getElementById('portMM').innerHTML=mh
+          }else{
+            var ct=lines.slice(1,-1).filter(function(l){return l.trim()}).join('\n')
+            document.getElementById('portMM').innerHTML=ct?'<div class="mmr" style="white-space:pre-wrap;color:#94a3b8">'+esc(ct)+'</div>':'<div class="mme">No MAC addresses on this port</div>'
           }
           switches[selectedId]=d
-        } else if(attempts>10){
-          clearInterval(check)
-          document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Timeout — MAC table not available</div>'
-        }
-      }catch(e){
-        clearInterval(check)
-        document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Error: '+e.message+'</div>'
-      }
+        }else if(att>10){clearInterval(ch);document.getElementById('portMM').innerHTML='<div class="mme">Timeout — no MAC data</div>'}
+      }).catch(function(){clearInterval(ch);document.getElementById('portMM').innerHTML='<div class="mme">Error fetching MAC data</div>'})
     },2000)
-  }catch(e){
-    document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Error: '+e.message+'</div>'
-  }
+  }).catch(function(e){document.getElementById('portMM').innerHTML='<div class="mme">Error: '+e.message+'</div>'})
 }
 
-function fetchPortDetail(cmd){
-  if(!currentPortName||!selectedId)return
-  const full=cmd+' '+currentPortName
-  document.getElementById('portModalMacs').innerHTML='<div class="modal-loading">⌛ Executing: '+esc(full)+'</div>'
+function portDetail(cmd){
+  var full=cmd+' '+curPortName
+  document.getElementById('portMM').innerHTML='<div class="ml2">⌛ Executing: '+esc(full)+'</div>'
   toast('Executing: '+full,'info')
-  sendCmdToSwitch(selectedId,full).then(()=>{
-    const prev=switches[selectedId]?.lastResponse||''
-    let attempts=0
-    const check=setInterval(()=>{
-      attempts++
-      fetch(API+'/switches/'+selectedId).then(r=>r.json()).then(d=>{
+  sendAPI(selectedId,full).then(function(){
+    var prev=switches[selectedId]?.lastResponse||''
+    var att=0
+    var ch=setInterval(function(){
+      att++
+      fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
         if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(check)
-          const lines=(d.lastResponse||'').split('\n')
-          document.getElementById('portModalMacs').innerHTML=lines.map(l=>
-            `<div class="modal-mac-row">${esc(l)}</div>`
-          ).join('')
+          clearInterval(ch)
+          var lines=(d.lastResponse||'').split('\n')
+          var mh=''
+          for(var li=0;li<lines.length;li++)mh+='<div class="mmr">'+esc(lines[li])+'</div>'
+          document.getElementById('portMM').innerHTML=mh
           switches[selectedId]=d
-        }else if(attempts>10){
-          clearInterval(check)
-          document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Timeout — no response</div>'
-        }
+        }else if(att>10){clearInterval(ch);document.getElementById('portMM').innerHTML='<div class="mme">Timeout</div>'}
       })
     },2000)
-  }).catch(e=>{
-    document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Error: '+e.message+'</div>'
-  })
+  }).catch(function(e){document.getElementById('portMM').innerHTML='<div class="mme">Error: '+e.message+'</div>'})
 }
 
 function portAction(action){
-  if(!currentPortName||!selectedId)return
-  const cmd='interface '+currentPortName+'\n'+action
-  document.getElementById('portModalMacs').innerHTML='<div class="modal-loading">⌛ '+action+' on '+esc(currentPortName)+'...</div>'
-  toast('Port action: '+action+' on '+currentPortName,'info')
-  sendCmdToSwitch(selectedId,cmd).then(()=>{
-    let attempts=0
-    const prev=switches[selectedId]?.lastResponse||''
-    const check=setInterval(()=>{
-      attempts++
-      fetch(API+'/switches/'+selectedId).then(r=>r.json()).then(d=>{
+  var cmd='interface '+curPortName+'\n'+action
+  document.getElementById('portMM').innerHTML='<div class="ml2">⌛ '+esc(action)+' on '+esc(curPortName)+'...</div>'
+  toast('Port: '+action+' on '+curPortName,'info')
+  sendAPI(selectedId,cmd).then(function(){
+    var prev=switches[selectedId]?.lastResponse||''
+    var att=0
+    var ch=setInterval(function(){
+      att++
+      fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
         if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(check)
-          const lines=d.lastResponse.split('\n')
-          document.getElementById('portModalMacs').innerHTML=lines.map(l=>
-            `<div class="modal-mac-row">${esc(l)}</div>`
-          ).join('')
+          clearInterval(ch)
+          var lines=d.lastResponse.split('\n')
+          var mh=''
+          for(var li=0;li<lines.length;li++)mh+='<div class="mmr">'+esc(lines[li])+'</div>'
+          document.getElementById('portMM').innerHTML=mh
           switches[selectedId]=d
-          toast('Action completed: '+action,'success')
+          toast('✅ Action completed: '+action,'success')
           renderDevice(selectedId)
-        }else if(attempts>10){
-          clearInterval(check)
-          document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Timeout — no response</div>'
-        }
+        }else if(att>10){clearInterval(ch);document.getElementById('portMM').innerHTML='<div class="mme">Timeout</div>'}
       })
     },2000)
   })
 }
 
-function portSetDescription(){
-  const desc=prompt('Enter new description for '+currentPortName+':')
+function portDesc(){
+  var desc=prompt('Enter description for '+curPortName+':')
   if(!desc||!desc.trim())return
-  const cmd='interface '+currentPortName+'\ndescription '+desc.trim()
-  document.getElementById('portModalMacs').innerHTML='<div class="modal-loading">⌛ Setting description...</div>'
-  toast('Setting description on '+currentPortName,'info')
-  sendCmdToSwitch(selectedId,cmd).then(()=>{
-    let attempts=0
-    const prev=switches[selectedId]?.lastResponse||''
-    const check=setInterval(()=>{
-      attempts++
-      fetch(API+'/switches/'+selectedId).then(r=>r.json()).then(d=>{
+  var cmd='interface '+curPortName+'\ndescription '+desc.trim()
+  document.getElementById('portMM').innerHTML='<div class="ml2">⌛ Setting description...</div>'
+  toast('Setting description on '+curPortName,'info')
+  sendAPI(selectedId,cmd).then(function(){
+    var prev=switches[selectedId]?.lastResponse||''
+    var att=0
+    var ch=setInterval(function(){
+      att++
+      fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
         if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(check)
-          document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-row" style="color:#4ade80">✅ Description set: '+esc(desc.trim())+'</div>'
+          clearInterval(ch)
+          document.getElementById('portMM').innerHTML='<div class="mmr" style="color:#4ade80">✅ Description set: '+esc(desc.trim())+'</div>'
           switches[selectedId]=d
           toast('Description updated','success')
-        }else if(attempts>10){
-          clearInterval(check)
-          document.getElementById('portModalMacs').innerHTML='<div class="modal-mac-empty">Timeout</div>'
-        }
+        }else if(att>10){clearInterval(ch);document.getElementById('portMM').innerHTML='<div class="mme">Timeout</div>'}
       })
     },2000)
   })
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CONSOLE ACTIONS (Quick Command Buttons)
+// TERMINAL ACTIONS BUTTONS (merged from Console)
 // ═══════════════════════════════════════════════════════════════
 
-function renderConsoleActions(sw){
-  const cmds=[
-    {label:'📋 Version',cmd:'show version'},
-    {label:'⚙️ Config',cmd:'show running-config'},
-    {label:'🔌 Interface',cmd:'show interface'},
-    {label:'🔗 VLAN',cmd:'show vlan'},
-    {label:'🌐 MAC Table',cmd:'show mac address-table'},
-    {label:'📡 ARP',cmd:'show arp'},
-    {label:'🗺️ Route',cmd:'show ip route'},
-    {label:'🔄 STP',cmd:'show spanning-tree'},
-    {label:'📊 CPU',cmd:'show cpu'},
-    {label:'🌡️ Temp',cmd:'show environment'},
-    {label:'🪵 Logging',cmd:'show logging'},
-    {label:'⏻ Reboot',cmd:'reboot'}
-  ]
-  document.getElementById('consoleActions').innerHTML=cmds.map(c=>
-    `<button ${c.cmd==='reboot'?'class="danger"':''} onclick="quickCmd('${c.cmd}')">${c.label}</button>`
-  ).join('')+`<button onclick="exportConsole()" title="Export history">📥 Export</button>
-  <button onclick="clearConsole()" title="Clear console">🗑️ Clear</button>`
+function renderTermActions(){
+  var html=
+    '<button onclick="quickCmd(\'show version\')">📋 Version</button>'
+    +'<button onclick="quickCmd(\'show running-config\')">⚙️ Config</button>'
+    +'<button onclick="quickCmd(\'show interface\')">🔌 Interface</button>'
+    +'<button onclick="quickCmd(\'show vlan\')">🔗 VLAN</button>'
+    +'<button onclick="quickCmd(\'show mac address-table\')">🌐 MAC</button>'
+    +'<button onclick="quickCmd(\'show arp\')">📡 ARP</button>'
+    +'<button onclick="quickCmd(\'show ip route\')">🗺️ Route</button>'
+    +'<button onclick="quickCmd(\'show spanning-tree\')">🔄 STP</button>'
+    +'<button onclick="quickCmd(\'show cpu\')">⚡ CPU</button>'
+    +'<button onclick="quickCmd(\'show environment\')">🌡️ Env</button>'
+    +'<button onclick="quickCmd(\'show logging\')">🪵 Logs</button>'
+    +'<div class="act-spacer"></div>'
+    +'<button class="done" onclick="termCmd(\'show mac address-table | count\')">🔢 MAC Count</button>'
+    +'<button onclick="exportLog()">📥 Export</button>'
+    +'<button onclick="clearTerm()">🗑️ Clear</button>'
+    +'<button class="danger" onclick="quickCmd(\'reboot\')">⏻ Reboot</button>'
+  document.getElementById('termActions').innerHTML=html
 }
 
 function quickCmd(cmd){
-  document.getElementById('cmdInput').value=cmd
-  sendCmd()
+  document.getElementById('termInput').value=cmd
+  termBuf=cmd
+  sendTermCmd()
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CONSOLE EXECUTION
+// TERMINAL SCREEN
 // ═══════════════════════════════════════════════════════════════
 
-function sendCmd(){
-  const input=document.getElementById('cmdInput')
-  const cmd=input.value.trim()
-  if(!cmd||!selectedId)return
-  input.value=''
-  addConsoleEntry('$ '+cmd,'cmd')
-  toast('Sent: '+cmd.substring(0,40),'info')
+function termWriteln(text,cls){
+  if(!cls)cls=''
+  var scr=document.getElementById('termScreen')
+  var d=document.createElement('div')
+  d.className='term-line t-'+cls
+  d.textContent=text
+  scr.appendChild(d)
+  termLineCount++
+  scr.scrollTop=scr.scrollHeight
+}
 
-  fetch(API+'/switches/'+selectedId+'/cmd',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cmd})
-  }).then(r=>r.json()).then(()=>{
-    let attempts=0
-    const prev=switches[selectedId]?.lastResponse||''
-    const check=setInterval(()=>{
-      attempts++
-      fetch(API+'/switches/'+selectedId).then(r=>r.json()).then(d=>{
+function showBanner(){
+  var scr=document.getElementById('termScreen')
+  scr.innerHTML=
+    '<div class="banner">╔═══════════════════════════════════════════════════════════╗</div>'
+    +'<div class="banner">║  <span style="color:#60a5fa">BDCOM Switch Terminal</span> — Interactive CLI via MQTT  ║</div>'
+    +'<div class="banner">║  <span style="color:#64748b">Quick buttons above</span> · <span style="color:#64748b">↑↓ history</span> · <span style="color:#64748b">Tab complete</span>  ║</div>'
+    +'<div class="banner">╚═══════════════════════════════════════════════════════════╝</div>'
+  termLineCount=0
+}
+
+function clearTerm(){
+  showBanner()
+  document.getElementById('inputStatus').textContent=termLineCount+' lines'
+}
+
+function updatePrompt(sw){
+  var name=cln(sw?.hostname||sw?.name||sw?.ip||selectedId||'switch')
+  var short=name.replace(/[ _-]/g,'').substring(0,14).toLowerCase()
+  document.getElementById('promptLabel').textContent='admin@'+short+'#'
+}
+
+function focusTerm(){
+  setTimeout(function(){document.getElementById('termInput').focus()},50)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TERMINAL COMMAND EXECUTION
+// ═══════════════════════════════════════════════════════════════
+
+function sendTermCmd(){
+  var input=document.getElementById('termInput')
+  var cmd=termBuf.trim()
+  if(!cmd||!selectedId||cmdWaiting)return
+  input.value=''
+  cmdWaiting=true
+  termBuf=''
+  document.getElementById('inputStatus').textContent='⏳ ...'
+
+  termHistory.push(cmd)
+  termHistIdx=termHistory.length
+  termWriteln(cmd,'green')
+
+  sendAPI(selectedId,cmd).then(function(){
+    var prev=switches[selectedId]?.lastResponse||''
+    var att=0
+    var ch=setInterval(function(){
+      att++
+      fetch(API+'/switches/'+selectedId).then(function(r){return r.json()}).then(function(d){
         if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(check)
-          const lines=d.lastResponse.split('\n')
-          for(const l of lines){
-            if(l.trim()) addConsoleEntry(l,'resp')
+          clearInterval(ch)
+          cmdWaiting=false
+          var lines=(d.lastResponse||'').split('\n')
+          for(var li=0;li<lines.length;li++){
+            if(lines[li].trim()) termWriteln(lines[li],'')
           }
           switches[selectedId]=d
-          toast('✅ Response received','success')
-        }else if(attempts>12){
-          clearInterval(check)
-          addConsoleEntry('⌛ Timeout — no response','err')
+          document.getElementById('inputStatus').textContent=termLineCount+' lines'
+          toast('✅ Done','success')
+        }else if(att>15){
+          clearInterval(ch);cmdWaiting=false
+          termWriteln('⌛ Command timed out','red')
+          document.getElementById('inputStatus').textContent='timeout'
           toast('Command timed out','error')
         }
-      }).catch(()=>{
-        clearInterval(check)
-        addConsoleEntry('✗ Network error','err')
-      })
+      }).catch(function(){clearInterval(ch);cmdWaiting=false;termWriteln('✗ Network error','red');document.getElementById('inputStatus').textContent='error'})
     },2000)
-  }).catch(e=>{
-    addConsoleEntry('✗ '+e.message,'err')
+  }).catch(function(e){
+    cmdWaiting=false
+    termWriteln('✗ '+e.message,'red')
+    document.getElementById('inputStatus').textContent='error'
     toast('Failed to send command','error')
   })
 }
 
-function handleConsoleKey(e){
-  if(e.key==='Enter') sendCmd()
-  else if(e.key==='ArrowUp'){
-    e.preventDefault()
-    const cmds=consoleHistory.filter(h=>h.type==='cmd').map(h=>h.text.replace(/^\$ /,''))
-    if(cmds.length>0) document.getElementById('cmdInput').value=cmds[cmds.length-1]
-  }
+function termHelp(){
+  termWriteln('── Available Commands ─────────────────','blue')
+  termWriteln('  show version            System version','blue')
+  termWriteln('  show running-config     Full configuration','blue')
+  termWriteln('  show interface          Interface status','blue')
+  termWriteln('  show vlan               VLANs','blue')
+  termWriteln('  show mac address-table  MAC table','blue')
+  termWriteln('  show ip route           Routing','blue')
+  termWriteln('  show cpu                CPU','blue')
+  termWriteln('  show arp                ARP table','blue')
+  termWriteln('  show environment        Temp & fans','blue')
+  termWriteln('  show logging            System logs','blue')
+  termWriteln('  show spanning-tree      STP state','blue')
+  termWriteln('  show lldp neighbors     LLDP neighbors','blue')
+  termWriteln('  show ddm                Optical transceivers','blue')
+  termWriteln('  clear / cls             Clear screen','dim')
+  termWriteln('  help                    This help','dim')
+  termWriteln('───────────────────────────────────────','blue')
 }
 
-function addConsoleEntry(text,type){
-  const history=document.getElementById('consoleHistory')
-  const empty=history.querySelector('.console-empty')
-  if(empty) empty.remove()
-  const time=new Date().toLocaleTimeString()
-  const div=document.createElement('div')
-  div.className='console-entry'+(type?' '+type:'')
-  div.innerHTML=`<span class="time">${time}</span><span class="text">${esc(text)}</span>`
-  history.appendChild(div)
-  history.scrollTop=history.scrollHeight
-  consoleHistory.push({time,text,type})
-  document.getElementById('consoleBadge').textContent=consoleHistory.length
-}
-
-function clearConsole(){
-  document.getElementById('consoleHistory').innerHTML='<div class="console-empty">⌨️ Type a command and press Enter · ↑↓ for history</div>'
-  consoleHistory=[]
-  document.getElementById('consoleBadge').textContent='0'
-}
-
-function exportConsole(){
-  if(consoleHistory.length===0) return toast('No history to export','warn')
-  const lines=consoleHistory.map(h=>`[${h.time}] ${h.text}`).join('\n')
-  const blob=new Blob([lines],{type:'text/plain'})
-  const a=document.createElement('a')
+function exportLog(){
+  var scr=document.getElementById('termScreen')
+  var lines=scr.textContent||''
+  if(!lines.trim()){toast('Nothing to export','warn');return}
+  var blob=new Blob([lines],{type:'text/plain'})
+  var a=document.createElement('a')
   a.href=URL.createObjectURL(blob)
-  a.download='switch-console-'+new Date().toISOString().slice(0,10)+'.txt'
+  a.download='switch-term-'+new Date().toISOString().slice(0,10)+'.txt'
   a.click()
-  toast('📥 History exported','success')
+  toast('📥 Terminal log exported','success')
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TERMINAL
+// TERMINAL KEYBOARD
 // ═══════════════════════════════════════════════════════════════
 
-function termFocus(){document.getElementById('termInput').focus()}
+function initTerm(){
+  var input=document.getElementById('termInput')
+  document.getElementById('termScreen').addEventListener('click',function(){input.focus()})
 
-function termPrompt(sw){
-  const name=clean(sw?.hostname||sw?.name||sw?.ip||selectedId||'switch')
-  const short=name.replace(/[ _-]/g,'').substring(0,16).toLowerCase()
-  const p='admin@'+short+'#'
-  document.getElementById('termTitle').textContent=p
-  document.getElementById('termDevice').textContent=(sw?.ip?sw.ip+' · ':'')+name
-  document.getElementById('termPrompt').textContent=p
-}
-
-function termWriteln(text,cls=''){
-  const body=document.getElementById('termBody')
-  const div=document.createElement('div')
-  div.className='term-text'+(cls?' '+cls:'')
-  div.textContent=text
-  body.appendChild(div)
-  termLines++
-  document.getElementById('termLineCount').textContent=termLines
-  body.scrollTop=body.scrollHeight
-}
-
-function termRenderInput(){
-  const body=document.getElementById('termBody')
-  const old=body.querySelector('.term-input-row')
-  if(old)old.remove()
-  const line=document.createElement('div')
-  line.className='term-input-row'
-  line.innerHTML=`<span class="prompt">${document.getElementById('termPrompt').textContent}</span><span class="buffer">${esc(termBuffer)}</span><span class="cursor"></span>`
-  body.appendChild(line)
-  body.scrollTop=body.scrollHeight
-}
-
-function termClear(){
-  document.getElementById('termBody').innerHTML=''
-  termLines=0
-  document.getElementById('termLineCount').textContent='0'
-  showTermBanner()
-  termRenderInput()
-}
-
-function showTermBanner(){
-  const body=document.getElementById('termBody')
-  body.innerHTML=
-    `<div class="banner-line">╔═══════════════════════════════════════════════════════════╗</div>
-<div class="banner-line">║  <span style="color:#60a5fa">BDCOM Switch Terminal</span> — Interactive CLI via MQTT Bridge  ║</div>
-<div class="banner-line">║  <span style="color:#64748b">↑↓ history</span> │ <span style="color:#64748b">Tab complete</span> │ <span style="color:#64748b">Ctrl+U clear</span> │ <span style="color:#64748b">Ctrl+L clear screen</span>  ║</div>
-<div class="banner-line">╚═══════════════════════════════════════════════════════════╝</div>`
-}
-
-function termExec(cmd){
-  if(!selectedId)return
-  if(cmd==='clear'||cmd==='cls'){termClear();return}
-  if(cmd==='help'){
-    termWriteln('── Available Commands ─────────────────────────','info')
-    termWriteln('  show version            System version info','info')
-    termWriteln('  show running-config     Full configuration','info')
-    termWriteln('  show interface          Interface status','info')
-    termWriteln('  show vlan               VLAN information','info')
-    termWriteln('  show mac address-table  MAC address table','info')
-    termWriteln('  show ip route           Routing table','info')
-    termWriteln('  show cpu                CPU utilization','info')
-    termWriteln('  show arp                ARP table','info')
-    termWriteln('  show environment        Temp & fan status','info')
-    termWriteln('  show logging            System logs','info')
-    termWriteln('  show spanning-tree      Spanning tree state','info')
-    termWriteln('  show lldp neighbors     LLDP neighbors','info')
-    termWriteln('  show ddm                Optical transceivers','info')
-    termWriteln('  clear / cls             Clear screen','dim')
-    termWriteln('  help                    This help','dim')
-    termWriteln('───────────────────────────────────────────────','info')
-    termRenderInput()
-    return
-  }
-
-  termWriteln(cmd,'')
-  toast('Terminal: '+cmd.substring(0,30),'info')
-
-  fetch(API+'/switches/'+selectedId+'/cmd',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cmd})
-  }).then(r=>r.json()).then(()=>{
-    let attempts=0
-    const prev=switches[selectedId]?.lastResponse||''
-    const check=setInterval(()=>{
-      attempts++
-      fetch(API+'/switches/'+selectedId).then(r=>r.json()).then(d=>{
-        if(d.lastResponse&&d.lastResponse!==prev){
-          clearInterval(check)
-          const lines=(d.lastResponse||'').split('\n')
-          for(const l of lines){
-            if(l.trim()) termWriteln(l,'')
-          }
-          switches[selectedId]=d
-          termBuffer=''
-          termRenderInput()
-        }else if(attempts>15){
-          clearInterval(check)
-          termWriteln('⌛ Command timed out','error')
-          termBuffer=''
-          termRenderInput()
-        }
-      })
-    },2000)
-  })
-}
-
-// ─── Terminal Keyboard Input ───────────────────
-document.addEventListener('DOMContentLoaded',()=>{
-
-  // Initialize terminal banner on first render
-  setTimeout(()=>{
-    if(document.getElementById('termBody').children.length===0){
-      showTermBanner()
-      termRenderInput()
-    }
-  },300)
-
-  // Terminal input
-  const termInput=document.getElementById('termInput')
-  document.getElementById('termBody').addEventListener('click',()=>termInput.focus())
-
-  termInput.addEventListener('keydown',(e)=>{
+  input.addEventListener('keydown',function(e){
     if(e.key==='Enter'){
-      const cmd=termBuffer.trim()
-      if(cmd){
-        termHistory.push(cmd)
-        termHistIdx=termHistory.length
-        const old=document.getElementById('termBody').querySelector('.term-input-row')
-        if(old)old.remove()
-        termExec(cmd)
-      }
+      sendTermCmd()
     }else if(e.key==='Backspace'){
-      termBuffer=termBuffer.slice(0,-1)
-      termRenderInput()
+      termBuf=termBuf.slice(0,-1)
     }else if(e.key==='ArrowUp'){
       e.preventDefault()
       if(termHistory.length>0&&termHistIdx>0){
         termHistIdx--
-        termBuffer=termHistory[termHistIdx]
-        termRenderInput()
-        termInput.value=termBuffer
+        termBuf=termHistory[termHistIdx]
+        input.value=termBuf
       }
     }else if(e.key==='ArrowDown'){
       e.preventDefault()
       if(termHistIdx<termHistory.length-1){
         termHistIdx++
-        termBuffer=termHistory[termHistIdx]
+        termBuf=termHistory[termHistIdx]
+        input.value=termBuf
       }else{
         termHistIdx=termHistory.length
-        termBuffer=''
+        termBuf=''
+        input.value=''
       }
-      termRenderInput()
-      termInput.value=termBuffer
     }else if(e.key==='Tab'){
       e.preventDefault()
-      const prefixes=['show version','show running-config','show interface','show vlan',
+      var prefs=['show version','show running-config','show interface','show vlan',
         'show mac address-table','show ip route','show cpu','show logging',
         'show arp','show lldp neighbors','show spanning-tree','show environment',
         'show ddm','show ntp status','show ip interface','show port-security',
         'clear','help']
-      const cur=termBuffer.trim()
+      var cur=termBuf.trim()
       if(cur){
-        const matches=prefixes.filter(p=>p.startsWith(cur))
-        if(matches.length===1){
-          termBuffer=matches[0]+' '
-          termRenderInput()
-        }else if(matches.length>1){
-          termWriteln('  '+matches.join('  '),'dim')
-          termRenderInput()
-        }
+        var matches=[]
+        for(var pi=0;pi<prefs.length;pi++)if(prefs[pi].indexOf(cur)===0)matches.push(prefs[pi])
+        if(matches.length===1){termBuf=matches[0]+' ';input.value=termBuf}
+        else if(matches.length>1){termWriteln('  '+matches.join('  '),'dim')}
       }
-    }else if(e.key==='l'&&e.ctrlKey){
-      e.preventDefault()
-      termClear()
-    }else if(e.key==='u'&&e.ctrlKey){
-      e.preventDefault()
-      termBuffer=''
-      termRenderInput()
+    }else if(e.key==='l'&&e.ctrlKey){e.preventDefault();clearTerm()
+    }else if(e.key==='u'&&e.ctrlKey){e.preventDefault();termBuf='';input.value=''
+    }else if(e.key==='h'&&e.ctrlKey){e.preventDefault();termHelp()
     }else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey){
-      termBuffer+=e.key
-      termRenderInput()
-      termInput.value=termBuffer
+      termBuf+=e.key
     }
+    input.value=termBuf
   })
-
-  // Sync hidden input with termBuffer
-  termInput.addEventListener('input',()=>{
-    termBuffer=termInput.value
-    termRenderInput()
-  })
-})
+}
 
 // ═══════════════════════════════════════════════════════════════
 // REFRESH
 // ═══════════════════════════════════════════════════════════════
 
-function refreshAll(){
-  fetchSwitches()
-  toast('↻ Refreshing...','info')
+function doRefresh(){
+  fetchAll()
+  toast('↻ Refreshing data...','info')
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TERMINAL HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+// Alias for quickCmd from buttons
+function termCmd(cmd){
+  document.getElementById('termInput').value=cmd
+  termBuf=cmd
+  sendTermCmd()
 }
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
 
-fetchSwitches()
-pollTimer=setInterval(()=>{
-  fetchSwitches()
-  if(selectedId&&switches[selectedId]) renderDevice(selectedId)
-},120000)
-
+document.addEventListener('DOMContentLoaded',function(){
+  showBanner()
+  initTerm()
+  fetchAll()
+  setInterval(function(){
+    fetchAll()
+    if(selectedId&&switches[selectedId]) renderDevice(selectedId)
+  },120000)
+})
 </script>
-
 </body>
 </html>
