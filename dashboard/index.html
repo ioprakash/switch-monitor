@@ -834,22 +834,22 @@ function portDesc(){
 
 function renderTermActions(){
   var html=
-    '<button onclick="quickCmd(\'show version\')">📋 Version</button>'
-    +'<button onclick="quickCmd(\'show running-config\')">⚙️ Config</button>'
-    +'<button onclick="quickCmd(\'show interface\')">🔌 Interface</button>'
-    +'<button onclick="quickCmd(\'show vlan\')">🔗 VLAN</button>'
-    +'<button onclick="quickCmd(\'show mac address-table\')">🌐 MAC</button>'
-    +'<button onclick="quickCmd(\'show arp\')">📡 ARP</button>'
-    +'<button onclick="quickCmd(\'show ip route\')">🗺️ Route</button>'
-    +'<button onclick="quickCmd(\'show spanning-tree\')">🔄 STP</button>'
-    +'<button onclick="quickCmd(\'show cpu\')">⚡ CPU</button>'
-    +'<button onclick="quickCmd(\'show environment\')">🌡️ Env</button>'
-    +'<button onclick="quickCmd(\'show logging\')">🪵 Logs</button>'
+    '<button data-cmd="show version">📋 Version</button>'
+    +'<button data-cmd="show running-config">⚙️ Config</button>'
+    +'<button data-cmd="show interface">🔌 Interface</button>'
+    +'<button data-cmd="show vlan">🔗 VLAN</button>'
+    +'<button data-cmd="show mac address-table">🌐 MAC</button>'
+    +'<button data-cmd="show arp">📡 ARP</button>'
+    +'<button data-cmd="show ip route">🗺️ Route</button>'
+    +'<button data-cmd="show spanning-tree">🔄 STP</button>'
+    +'<button data-cmd="show cpu">⚡ CPU</button>'
+    +'<button data-cmd="show environment">🌡️ Env</button>'
+    +'<button data-cmd="show logging">🪵 Logs</button>'
     +'<div class="act-spacer"></div>'
-    +'<button class="done" onclick="termCmd(\'show mac address-table | count\')">🔢 MAC Count</button>'
-    +'<button onclick="exportLog()">📥 Export</button>'
-    +'<button onclick="clearTerm()">🗑️ Clear</button>'
-    +'<button class="danger" onclick="quickCmd(\'reboot\')">⏻ Reboot</button>'
+    +'<button data-cmd="show mac address-table | count" class="done">🔢 MAC Count</button>'
+    +'<button data-cmd="__export__">📥 Export</button>'
+    +'<button data-cmd="__clear__">🗑️ Clear</button>'
+    +'<button data-cmd="reboot" class="danger">⏻ Reboot</button>'
   document.getElementById('termActions').innerHTML=html
 }
 
@@ -1033,6 +1033,23 @@ function exportLog(){
 function initTerm(){
   var input=document.getElementById('termInput')
   document.getElementById('termScreen').addEventListener('click',function(){input.focus()})
+  
+  // Event delegation for term action buttons (no onclick attributes)
+  document.getElementById('termActions').addEventListener('click',function(e){
+    var btn = e.target.closest('button')
+    if(!btn) return
+    var cmd = btn.getAttribute('data-cmd')
+    if(!cmd) return
+    btn.style.transform = 'scale(0.93)'
+    setTimeout(function(){btn.style.transform = ''},150)
+    if(cmd === '__export__'){exportLog();return}
+    if(cmd === '__clear__'){clearTerm();return}
+    // Normal command
+    document.getElementById('termInput').value=cmd
+    termBuf=cmd
+    toast('▶ Sending: '+cmd,'info')
+    sendTermCmd()
+  })
 
   input.addEventListener('keydown',function(e){
     if(e.key==='Enter'){
