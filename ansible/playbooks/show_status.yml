@@ -1,0 +1,36 @@
+---
+# Playbook: Show switch info (version, uptime, CPU, ports)
+- name: Show Switch Status
+  hosts: bdcom_switches
+  gather_facts: no
+
+  tasks:
+    - name: Get version
+      ansible.netcommon.cli_command:
+        command: show version
+      register: version
+
+    - name: Get interface status
+      ansible.netcommon.cli_command:
+        command: show interface
+      register: interfaces
+
+    - name: Get VLAN info
+      ansible.netcommon.cli_command:
+        command: show vlan
+      register: vlans
+
+    - name: Get MAC table
+      ansible.netcommon.cli_command:
+        command: show mac address-table
+      register: mac_table
+
+    - name: Display results
+      debug:
+        msg: |
+          === {{ inventory_hostname }} ===
+          {{ version.stdout_lines[0:5] | default(version.stdout.split('\n')[0:5]) | join('\n') }}
+          
+          Interface Count: {{ interfaces.stdout_lines | default(interfaces.stdout.split('\n')) | select('search','^Giga|^Fast') | list | length }}
+          VLAN Count: {{ vlans.stdout_lines | default(vlans.stdout.split('\n')) | select('search','^[0-9]+\\s') | list | length }}
+          MAC Entries: {{ mac_table.stdout_lines | default(mac_table.stdout.split('\n')) | select('search','[0-9a-fA-F]{4}\\.[0-9a-fA-F]{4}\\.[0-9a-fA-F]{4}') | list | length }}

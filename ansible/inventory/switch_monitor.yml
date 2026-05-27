@@ -1,0 +1,6 @@
+# ─── Ansible Integration for Switch Monitor ────────────────────
+# Inventory source: reads switches from the dashboard API
+# Commands execute via telnet (same method as dashboard)
+
+plugin: ansible.builtin.script
+script: /home/prakash/code/switch-monitor/ansible/inventory/switch_api.py

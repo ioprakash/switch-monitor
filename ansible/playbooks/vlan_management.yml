@@ -1,0 +1,36 @@
+---
+# Playbook: VLAN Management
+# Usage: ansible-playbook -i inventory/switch_monitor.yml playbooks/vlan_management.yml -e vlan_id=100 -e vlan_name=Users
+- name: VLAN Management
+  hosts: bdcom_switches
+  gather_facts: no
+
+  vars:
+    vlan_id: "{{ vlan_id | default(100) }}"
+    vlan_name: "{{ vlan_name | default('VLAN_' + vlan_id | string) }}"
+    action: "{{ action | default('show') }}"  # show, create, delete
+
+  tasks:
+    - name: Show VLANs
+      ansible.netcommon.cli_command:
+        command: "show vlan"
+      register: result
+      when: action == "show"
+
+    - name: Create VLAN
+      ansible.netcommon.cli_config:
+        config: |
+          vlan {{ vlan_id }}
+          name {{ vlan_name }}
+      when: action == "create"
+
+    - name: Delete VLAN
+      ansible.netcommon.cli_config:
+        config: |
+          no vlan {{ vlan_id }}
+      when: action == "delete"
+
+    - name: Display result
+      debug:
+        var: result.stdout_lines
+      when: action == "show"

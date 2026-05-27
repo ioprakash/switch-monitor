@@ -128,6 +128,39 @@ app.post('/api/switches/:id/cmd', (req, res) => {
 
 app.get('/health', (req, res) => res.json({ status: 'ok', wsClients: wsClients.size, switches: Object.keys(devices).length }));
 
+// ─── Ansible Integration ──────────────────────────────────────
+// List available playbooks
+app.get('/api/ansible/playbooks', (req, res) => {
+    http.get('http://127.0.0.1:3003/playbooks', (r) => {
+        let data = '';
+        r.on('data', c => data += c);
+        r.on('end', () => res.json(JSON.parse(data || '[]')));
+    }).on('error', () => res.json([]));
+});
+
+// Run an Ansible playbook
+app.post('/api/ansible/run', (req, res) => {
+    const { playbook, vars } = req.body;
+    if (!playbook) return res.status(400).json({ error: 'playbook name required' });
+    
+    const body = JSON.stringify({ playbook, vars: vars || {} });
+    const opt = {
+        hostname: '127.0.0.1', port: 3003, path: '/run', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    };
+    
+    const req2 = http.request(opt, (r) => {
+        let data = '';
+        r.on('data', c => data += c);
+        r.on('end', () => {
+            try { res.json(JSON.parse(data)); } catch(e) { res.json({ error: data.substring(0,500) }); }
+        });
+    });
+    req2.on('error', (e) => res.status(500).json({ error: e.message }));
+    req2.write(body);
+    req2.end();
+});
+
 // ─── HTTP + WebSocket Server ──────────────────────────────────
 const server = http.createServer(app);
 

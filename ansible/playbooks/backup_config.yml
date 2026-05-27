@@ -1,0 +1,34 @@
+---
+# Playbook: Backup running-config (via Dashboard API)
+- name: Backup Switch Config
+  hosts: localhost
+  gather_facts: no
+  vars:
+    api: "http://192.168.10.10:7575/api"
+    sw: "SW_B869F401EDA4"
+
+  tasks:
+    - name: Request running-config
+      uri:
+        url: "{{ api }}/switches/{{ sw }}/cmd"
+        method: POST
+        body_format: json
+        body: { cmd: "show running-config" }
+
+    - name: Wait for response
+      wait_for: timeout=8
+
+    - name: Get config
+      uri:
+        url: "{{ api }}/switches/{{ sw }}"
+      register: result
+
+    - name: Save to file
+      copy:
+        content: "{{ result.json.lastResponse | default('No config') }}"
+        dest: "backups/{{ result.json.hostname | default('switch') }}_{{ ansible_date_time.date }}.cfg"
+      delegate_to: localhost
+
+    - name: Done
+      debug:
+        msg: "Config saved to backups/{{ result.json.hostname | default('switch') }}_{{ ansible_date_time.date }}.cfg"

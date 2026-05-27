@@ -1,0 +1,48 @@
+---
+# Playbook: Execute commands via Dashboard API
+# Uses the existing switch-monitor backend (handles Telnet/SSH)
+- name: Dashboard API Automation
+  hosts: localhost
+  gather_facts: no
+  vars:
+    api_base: "http://192.168.10.10:7575/api"
+    switch_id: "SW_B869F401EDA4"
+
+  tasks:
+    - name: Run show version
+      uri:
+        url: "{{ api_base }}/switches/{{ switch_id }}/cmd"
+        method: POST
+        body_format: json
+        body:
+          cmd: "{{ command | default('show version') }}"
+      register: cmd_result
+      when: wait == false or wait is undefined
+
+    - name: Run command and wait for response
+      uri:
+        url: "{{ api_base }}/switches/{{ switch_id }}/cmd"
+        method: POST
+        body_format: json
+        body:
+          cmd: "{{ command | default('show version') }}"
+      register: send_result
+      when: wait | default(true) | bool
+
+    - name: Wait for response
+      uri:
+        url: "{{ api_base }}/switches/{{ switch_id }}"
+      register: poll_result
+      retries: 15
+      delay: 2
+      until: poll_result.json.lastCmdTime is defined and (poll_result.json.lastCmdTime | default('')) != (prev_time | default(''))
+      when: wait | default(true) | bool
+
+    - name: Display response
+      debug:
+        msg: >-
+          {% if wait | default(true) | bool %}
+          {{ poll_result.json.lastResponse | default('No response') }}
+          {% else %}
+          {{ cmd_result.json }}
+          {% endif %}

@@ -1,0 +1,73 @@
+---
+# Playbook: Switch Health Check (via Dashboard API)
+- name: Switch Health Check via API
+  hosts: localhost
+  gather_facts: no
+  vars:
+    api: "http://192.168.10.10:7575/api"
+    sw: "SW_B869F401EDA4"
+
+  tasks:
+    - name: Get version
+      uri:
+        url: "{{ api }}/switches/{{ sw }}/cmd"
+        method: POST
+        body_format: json
+        body: { cmd: "show version" }
+    - name: Wait 6s
+      wait_for: timeout=6
+    - name: Read response
+      uri:
+        url: "{{ api }}/switches/{{ sw }}"
+      register: result
+
+    - name: Show version
+      debug:
+        msg: "{{ result.json.lastResponse | default('N/A') }}"
+
+    - name: Get CPU
+      uri:
+        url: "{{ api }}/switches/{{ sw }}/cmd"
+        method: POST
+        body_format: json
+        body: { cmd: "show cpu" }
+    - name: Wait 6s
+      wait_for: timeout=6
+    - name: Read CPU
+      uri:
+        url: "{{ api }}/switches/{{ sw }}"
+      register: cpu_result
+
+    - name: Get environment
+      uri:
+        url: "{{ api }}/switches/{{ sw }}/cmd"
+        method: POST
+        body_format: json
+        body: { cmd: "show environment" }
+    - name: Wait 6s
+      wait_for: timeout=6
+    - name: Read env
+      uri:
+        url: "{{ api }}/switches/{{ sw }}"
+      register: env_result
+
+    - name: Health Report
+      debug:
+        msg: |
+          ╔═══════════════════════════════════╗
+          ║ SWITCH HEALTH REPORT              ║
+          ╠═══════════════════════════════════╣
+          ║ Hostname: {{ result.json.hostname | default('N/A') }}
+          ║ IP: {{ result.json.ip }}
+          ║ Status: {{ result.json.status }}
+          ║ CPU: {{ result.json.cpu }}%
+          ║ Temp: {{ result.json.temperature }}°C
+          ║ Uptime: {{ result.json.uptime }}s
+          ║ Ports: {{ result.json.ports }}
+          ║───────────────────────────────────║
+          ║ show cpu output:
+          ║ {{ cpu_result.json.lastResponse | default('N/A') }}
+          ║───────────────────────────────────║
+          ║ show environment:
+          ║ {{ env_result.json.lastResponse | default('N/A') }}
+          ╚═══════════════════════════════════╝

@@ -1,0 +1,23 @@
+#!/bin/bash
+# swcli - Switch CLI via Dashboard API
+# Usage: swcli "show version" [switch_id]
+API="http://192.168.10.10:7575/api"
+SWITCH="${2:-SW_B869F401EDA4}"
+
+curl -s -X POST "$API/switches/$SWITCH/cmd" \
+  -H "Content-Type: application/json" \
+  -d "{\"cmd\": \"$1\"}" > /dev/null
+
+# Poll for response
+PREV_TIME=$(curl -s "$API/switches/$SWITCH" | python3 -c "import json,sys;print(json.load(sys.stdin).get('lastCmdTime',''))")
+for i in $(seq 1 10); do
+  sleep 2
+  DATA=$(curl -s "$API/switches/$SWITCH")
+  CMD_TIME=$(echo "$DATA" | python3 -c "import json,sys;print(json.load(sys.stdin).get('lastCmdTime',''))")
+  if [ "$CMD_TIME" != "$PREV_TIME" ] && [ -n "$CMD_TIME" ]; then
+    echo "$DATA" | python3 -c "import json,sys;print(json.load(sys.stdin).get('lastResponse',''))"
+    exit 0
+  fi
+done
+echo "Timeout"
+exit 1

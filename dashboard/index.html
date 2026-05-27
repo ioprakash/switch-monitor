@@ -850,6 +850,10 @@ function renderTermActions(){
     +'<button data-cmd="__export__">📥 Export</button>'
     +'<button data-cmd="__clear__">🗑️ Clear</button>'
     +'<button data-cmd="reboot" class="danger">⏻ Reboot</button>'
+    +'<div class="act-spacer"></div>'
+    +'<span style="color:#2d3448;font-size:0.6rem;align-self:center;margin:0 4px">║ Ansible ║</span>'
+    +'<button data-cmd="__playbook_health_check__" class="done">🏥 Health Check</button>'
+    +'<button data-cmd="__playbook_backup_config__" class="done">💾 Backup Config</button>'
   document.getElementById('termActions').innerHTML=html
 }
 
@@ -1044,6 +1048,28 @@ function initTerm(){
     setTimeout(function(){btn.style.transform = ''},150)
     if(cmd === '__export__'){exportLog();return}
     if(cmd === '__clear__'){clearTerm();return}
+    // Ansible playbook commands
+    if(cmd.indexOf('__playbook_') === 0){
+      var pb = cmd.replace('__playbook_','')
+      termBuf=''
+      document.getElementById('inputStatus').textContent='🔄 playbook...'
+      toast('🏥 Running Ansible: '+pb,'info')
+      fetch(API+'/ansible/run', {
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({playbook:pb})
+      }).then(function(r){return r.json()}).then(function(d){
+        var lines = (d.output || d.stdout || d.stderr || 'No output').split('\n')
+        for(var li=0;li<lines.length;li++){
+          if(lines[li].trim()) termWriteln(lines[li],'')
+        }
+        document.getElementById('inputStatus').textContent=termLineCount+' lines'
+        toast(d.success?'✅ Playbook done':'⚠️ Playbook had errors', d.success?'success':'warn')
+      }).catch(function(e){
+        termWriteln('✗ '+e.message,'red')
+        document.getElementById('inputStatus').textContent='error'
+      })
+      return
+    }
     // Normal command
     document.getElementById('termInput').value=cmd
     termBuf=cmd
