@@ -1,0 +1,16 @@
+---
+bdcom_switches:
+  hosts:
+    F1-SOFT-PULCHWOK-BDCOM-01:
+      ansible_host: 192.168.10.50
+      ansible_port: 22
+      ansible_user: admin
+      ansible_password: admin
+      ansible_connection: ansible.netcommon.network_cli
+      ansible_network_os: bdcom.s2500.bdcom
+      ansible_become_method: enable
+      ansible_become_password: admin
+      ansible_command_timeout: 30
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
